@@ -21,9 +21,6 @@ module Uv
       # Meta information
       attr_accessor :meta
       
-      # HTTPClient instance
-      attr_accessor :client
-      
       # UV Storage Conncetion instance
       attr_accessor :connection
       
@@ -71,7 +68,6 @@ module Uv
         
         self.raw_file   = args.first if args.first.is_a?(File) or args.first.is_a?(Tempfile)
         self.config     = Uv::Storage::Config.new
-        self.client     = HTTPClient.new
         self.connection = Uv::Storage::Connection.new(self.config)
         self.object     = self.options['object']
         
@@ -226,7 +222,7 @@ module Uv
           if self.mapping.present?
             logger.debug "File already exists on Uv::Storage, trying to update the record"
             
-            self.connection.update(mapping, { :access_level => lvl } )        
+            self.connection.update(mapping.nodes, mapping.path, { 'access_level' => lvl } )
             self.mapping.access_level = lvl 
             self.mapping.save
           end
@@ -309,7 +305,7 @@ module Uv
         raise NodesMissing.new if mapping.nodes.blank?
         
         begin
-          self.connection.delete(mapping)
+          self.connection.delete(mapping.nodes, mapping.path)
 
           return true
         rescue => e
@@ -415,9 +411,10 @@ module Uv
         validate_object(self.object)
         
         logger.debug "Sending file to master in Uv::Storage::File#save"
+        raise FileObjectMissing.new if self.raw_file.blank?
         
-        @result = send_file_to_master!
-                  
+        @result = self.connection.create(self.raw_file, self.options['access_level'])
+        
         self.mapping = Uv::Storage::FileMapping.new( 
           :nodes => @result['node_domains'], 
           :file_path => @result['path'], 
@@ -427,7 +424,7 @@ module Uv
         )
           
         logger.debug "Trying to save mapping in Uv::Storage::File#save"
-        logger.debug self.mapping.inspect
+        logger.debug self.mapping
         
         raise ActiveRecordObjectInvalid.new() unless self.mapping.valid?
         
@@ -502,45 +499,19 @@ module Uv
           raise ActiveRecordObjectInvalid.new("The object needs to be saved first") if object.new_record?
         end
         
-        #
-        # 
-        #
-        def send_file_to_master!
-          puts "Trying to send file to master http://#{Uv::Storage.master_domain}/create"
-          
-          self.raw_file.close
-          File.open(self.raw_file.path) do |file|
-            data = { 
-              :file => file, 
-              :signature => self.connection.signature, 
-              :access_key => self.config.access_key,
-              :access_level => uv_access_level || 'public',
-              :original_filename => self.raw_file.respond_to?(:original_filename) ? self.raw_file.original_filename : File.basename(self.raw_file.path)
-            }
-            
-            @result = self.client.post("http://#{Uv::Storage.master_domain}/create", data)
-          end
-          
-          @result = JSON.parse(@result.content)
-          
-          puts "Send file to master: #{@result.inspect}"
-          
-          return @result
-        end
-        
         # 
         # Convert amazon style access level to internal one
         # 
         def uv_access_level
           case self.access_level.to_s
           when 'public-read', 'public'
-            'public'
+            Uv::Storage::File::ACL_PUBLIC
           when 'authenticated-read', 'protected'
-            'protected'
+            Uv::Storage::File::ACL_PROTECTED
           when 'private'
-            'private'
+            Uv::Storage::File::ACL_PRIVATE
           else
-            'public'
+            Uv::Storage::File::ACL_PUBLIC
           end
         end
         
@@ -553,12 +524,16 @@ module Uv
         end
       
         def retrieve_meta!
+          logger.debug "Trying to retrieve meta information for file #{self.path}"
+          
           begin
             if self.meta.blank?
-              content = self.client.get_content("http://#{self.nodes.first}.#{Uv::Storage.asset_domain}/meta/#{self.path}/#{self.connection.signature}")
-              self.meta = JSON.parse(content)
+              self.meta = self.connection.meta(self.nodes.first, self.path)
             end
-          rescue
+          rescue => e
+            logger.fatal "Error getting meta data"
+            logger.fatal e
+            
             self.meta = nil
           end
           

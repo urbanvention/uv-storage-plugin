@@ -1,6 +1,6 @@
 require 'digest/sha1'
-require 'uv_cipher'
 require 'digest/md5'
+require 'uv_cipher'
 
 module Uv
   module Storage
@@ -282,13 +282,43 @@ module Uv
       #     :path         => '2010/09/08/12224345223-1.jpg'     # => Returns the new path of the file
       #   }
       #
-      def update(mapping, update_data = {}, options = {})
-        # TODO: Implement, be aware that you to delete the file on ALL nodes.
-        # TODO: Sign the url and params with cipher
-        self.client.post(
-          "http://#{self.base_url(mapping.nodes.first)}/update/#{mapping.path}/#{self.signature}", 
-          update_data
-        )
+      # @param  [Array]   nodes Nodes where the files are stored
+      # @param  [String]  path Path of the file on the nodes
+      # @param  [Hash]    update_options Fields to update, currently only +access_level+ is supported
+      # @return [String]  Returns the new path of the file
+      #
+      def update(nodes, path, update_options = {})
+        params = {
+          'action' => 'update'
+          'path' => path
+        }
+        params.update(update_options)
+        
+        signature = self.compute_signature(params)
+        
+        nodes.each do |node|
+          begin
+            @update = self.client.post("#{self.base_url(node)}/update", { :signature => signature })
+          rescue => e
+            logger.fatal "An error occured in Uv::Storage::Connection#update"
+            logger.fatal e
+
+            raise NodeConnectionFailed.new
+          end
+        end
+        
+        # unencrypt data
+        begin
+          @update = self.cipher.decrypt(@update.content)
+          @update = JSON.parse(@update)
+        rescue => e
+          logger.fatal "An error occured in Uv::Storage::Connection#update"
+          logger.fatal e
+          
+          raise KeyVerificationFailed.new
+        end
+        
+        return @update['path']
       end
       
       # 
@@ -306,8 +336,26 @@ module Uv
       #
       # Returns 200 OK if successful.
       #
-      def delete
-        # TODO: Implement, be aware that you to delete the file on ALL nodes.
+      def delete(nodes, path)
+        params = {
+          'action' => 'delete'
+          'path' => path
+        }
+        
+        signature = self.compute_signature(params)
+        
+        nodes.each do |node|
+          begin
+            self.client.post("#{self.base_url(node)}/update", { :signature => signature })
+          rescue => e
+            logger.fatal "An error occured in Uv::Storage::Connection#delete"
+            logger.fatal e
+
+            raise NodeConnectionFailed.new
+          end
+        end
+        
+        return true
       end
       
       # 
