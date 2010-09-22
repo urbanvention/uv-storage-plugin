@@ -146,7 +146,8 @@ module Uv
         ::File.open(file.path) do |file|
           data = { 
             :file => file, 
-            :signature => signature
+            :signature => signature,
+            :access_key => self.config.access_key
           }
           
           begin
@@ -161,7 +162,6 @@ module Uv
         
         begin
           @result = self.cipher.decrypt(@result.content)
-          @result = JSON.parse(@result)
         rescue => e
           logger.fatal "An error occured in Uv::Storage::Connection#create"
           logger.fatal e
@@ -206,7 +206,6 @@ module Uv
         
         begin
           @status = self.cipher.decrypt(@status.content)
-          @status = JSON.parse(@status)
         rescue => e
           logger.fatal "An error occured in Uv::Storage::Connection#status"
           logger.fatal e
@@ -239,7 +238,7 @@ module Uv
       #
       def meta(node, path)
         params = {
-          'action' => 'meta'
+          'action' => 'meta',
           'path' => path
         }
         
@@ -251,7 +250,6 @@ module Uv
         
         begin
           @meta = self.cipher.decrypt(@meta.content)
-          @meta = JSON.parse(@meta)
         rescue => e
           logger.fatal "An error occured in Uv::Storage::Connection#meta"
           logger.fatal e
@@ -289,7 +287,7 @@ module Uv
       #
       def update(nodes, path, update_options = {})
         params = {
-          'action' => 'update'
+          'action' => 'update',
           'path' => path
         }
         params.update(update_options)
@@ -310,7 +308,6 @@ module Uv
         # unencrypt data
         begin
           @update = self.cipher.decrypt(@update.content)
-          @update = JSON.parse(@update)
         rescue => e
           logger.fatal "An error occured in Uv::Storage::Connection#update"
           logger.fatal e
@@ -338,7 +335,7 @@ module Uv
       #
       def delete(nodes, path)
         params = {
-          'action' => 'delete'
+          'action' => 'delete',
           'path' => path
         }
         
