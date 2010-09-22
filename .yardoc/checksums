@@ -1,0 +1,7 @@
+lib/uv_storage/config.rb 1331a4728343639988ec15126254c592e574bbc6
+lib/generators/uv_storage/uv_storage_generator.rb 3527669359103b62c9ea6aff4be5fe660d0d771c
+lib/uv_storage/storage_file.rb e367542c51a1cf3579f122526e8dfd21c3555767
+lib/uv_storage.rb b34c0614d9772cf55c7f0f86ee9b4b6920bf8748
+lib/uv_storage/connection.rb eda7e309c016c029cb71c41a7ac084dd9f87f2b8
+lib/generators/uv_storage/templates/create_file_mapping_table.rb 77d9d4e68442545f34732db8ba3a0b372a207f94
+lib/carrierwave/uv_storage.rb 432b3c4a6f6c3f517993679c376ced9b55abcd6c

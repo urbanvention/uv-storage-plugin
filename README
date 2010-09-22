@@ -1,0 +1,68 @@
+= urbanvention Storage
+
+Uv::Storage implements a wrapper to the urbanvention storage cloud. This is a half-private cloud that allows
+applications to store any type of asset in the cloud and retrieve them when needed. The Uv::Storage cloud is
+build to provide high-performance read operations. If a file is ACL public-read best read-performance is provided,
+because the request will directly hit the hard-drive and will not go through a processing-application.
+
+Additionally Uv::Storage allows communication between the cloud and the application trough an injected controller, 
+if one of our nodes goes down the application will be informed and the urls of the files will be changed 
+accordingly. Each file is registered in a special table within the application which saves the relation between a 
+file and a database record. This improves perfomance, because no look-ups are needed to get the file's location.
+
+The Uv::Storage module implements basic logic and requirements. More specific information can be found in the 
++Uv::Storage::File+ class. 
+
+== Install
+
+You can wether install Uv::Storage as a plugin or as a submodule into your rails app.
+
+Install as a Plugin:
+
+  script/plugin install git@dev.urbanvention.com/uv_storage_plugin.git
+
+Install as a submodule:
+
+  git submodule add git@dev.urbanvention.com/uv_storage_plugin.git vendor/plugins/uv_storage_plugin
+
+If you install the plugin as a submodule you will need to initialize your submodules upon each installation of the
+plugin.
+
+  git submodule init
+  git submodule update
+
+== Updating
+
+To update the plugin you have to either remove the whole folder and re-install the plugin or if you installed it as a
+git submodule you can go into the directory of the plugin and update the plugin:
+
+  git checkout master       # switch to the master branch of the plugin
+  git pull origin master    # pull the latest state from the remote server
+
+== Setup
+
+Run the generate command to generate needed files.
+
+  script/generate uv_storage
+
+This will create the following files for you
+
+* config/uv_storage.yml
+* db/102132232_create_file_mapping_table.rb
+
+After the files are created you should run 
+
+  rake db:migrate
+
+To create the needed database tables for Uv::Storage. Also provide your access_key and secrect_key in the 
+config/uv_storage.yml file. 
+
+After you finsihed setting up the basic requirements you need to install a few gems that are needed run Uv::Storage,
+you can add them to your config/environment.rb. 
+
+  config.gem 'httpclient'
+  config.gem 'json'
+  
+  rake gems:install
+
+This should get you going!

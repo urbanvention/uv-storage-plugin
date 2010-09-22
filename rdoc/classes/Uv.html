@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Module: Uv</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href=".././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Module</strong></td>
+          <td class="class-name-in-header">Uv</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../files/lib/carrierwave/uv_storage_rb.html">
+                lib/carrierwave/uv_storage.rb
+                </a>
+        <br />
+                <a href="../files/lib/uv_storage/config_rb.html">
+                lib/uv_storage/config.rb
+                </a>
+        <br />
+                <a href="../files/lib/uv_storage/connection_rb.html">
+                lib/uv_storage/connection.rb
+                </a>
+        <br />
+                <a href="../files/lib/uv_storage/storage_file_rb.html">
+                lib/uv_storage/storage_file.rb
+                </a>
+        <br />
+                <a href="../files/lib/uv_storage_rb.html">
+                lib/uv_storage.rb
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <h1>urbanvention <a href="Uv/Storage.html">Storage</a></h1>
+<p>
+<a href="Uv/Storage.html">Uv::Storage</a> implements a wrapper to the
+urbanvention storage cloud. This is a half-private cloud that allows
+applications to store any type of asset in the cloud and retrieve them when
+needed. The <a href="Uv/Storage.html">Uv::Storage</a> cloud is build to
+provide high-performance read operations. If a file is ACL public-read best
+read-performance is provided, because the request will directly hit the
+hard-drive and will not go through a processing-application.
+</p>
+<p>
+Additionally <a href="Uv/Storage.html">Uv::Storage</a> allows communication
+between the cloud and the application trough an injected controller, if one
+of our nodes goes down the application will be informed and the urls of the
+files will be changed accordingly. Each file is registered in a special
+table within the application which saves the relation between a file and a
+database record. This improves perfomance, because no look-ups are needed
+to get the file&#8216;s location.
+</p>
+<p>
+The <a href="Uv/Storage.html">Uv::Storage</a> module implements basic logic
+and requirements. More specific information can be found in the
++Uv::Storage::File+ class.
+</p>
+<h2>Setup</h2>
+<p>
+Run the generate command to generate needed files.
+</p>
+<pre>
+  script/generate uv_storage
+</pre>
+<p>
+This will create the following files for you
+</p>
+<ul>
+<li>config/uv_storage.yml
+
+</li>
+<li>db/102132232_create_file_mapping_table.rb
+
+</li>
+</ul>
+<p>
+After the files are created you should run
+</p>
+<pre>
+  rake db:migrate
+</pre>
+<p>
+To create the needed database tables for <a
+href="Uv/Storage.html">Uv::Storage</a>. Also provide your access_key and
+secrect_key in the config/uv_storage.yml file.
+</p>
+<p>
+After you finsihed setting up the basic requirements you need to install a
+few gems that are needed run <a href="Uv/Storage.html">Uv::Storage</a>, you
+can add them to your config/environment.rb.
+</p>
+<pre>
+  config.gem 'httpclient'
+  config.gem 'json'
+
+  rake gems:install
+</pre>
+<p>
+This should get you going!
+</p>
+
+    </div>
+
+
+   </div>
+
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+    <div id="class-list">
+      <h3 class="section-bar">Classes and Modules</h3>
+
+      Module <a href="Uv/Storage.html" class="link">Uv::Storage</a><br />
+
+    </div>
+
+
+
+
+      
+
+
+    <!-- if method_list -->
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>
