@@ -13,7 +13,7 @@ file and a database record. This improves perfomance, because no look-ups are ne
 The Uv::Storage module implements basic logic and requirements. More specific information can be found in the 
 +Uv::Storage::File+ class. 
 
-== Install
+== Install 
 
 You can wether install Uv::Storage as a plugin or as a submodule into your rails app.
 
@@ -58,10 +58,11 @@ To create the needed database tables for Uv::Storage. Also provide your access_k
 config/uv_storage.yml file. 
 
 After you finsihed setting up the basic requirements you need to install a few gems that are needed run Uv::Storage,
-you can add them to your config/environment.rb. 
+you can add them to your config/environment.rb. Uv Cipher is required and only available on request at info@urbanvention.com.
 
   config.gem 'httpclient'
   config.gem 'json'
+  config.gem 'uv_cipher'
   
   rake gems:install
 

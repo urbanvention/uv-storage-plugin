@@ -1,7 +1,13 @@
 require 'digest/sha1'
+require 'uv_cipher'
+require 'digest/md5'
 
 module Uv
   module Storage
+    
+    class NodeConnectionFailed < StandardError; end;
+    class MissingSignature < StandardError; end;
+    class KeyVerificationFailed < StandardError; end;
     
     #
     # 
@@ -32,14 +38,14 @@ module Uv
       
       attr_accessor :config
       attr_accessor :client
+      attr_reader   :logger
+      attr_reader   :cipher
       
       def initialize(config = nil)
+        self.logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
         self.config     = config.nil? ? Uv::Storage::Config.new : config
+        self.cipher     = Uv::Cipher.new(self.config.secret_key, self.config.access_key)
         self.client     = HTTPClient.new
-      end
-      
-      def signature
-        Digest::SHA1.hexdigest(self.config.access_key + self.config.secret_key)
       end
       
       # 
@@ -56,8 +62,41 @@ module Uv
       #
       # The server will return the file stream.
       #
-      def get
-        # TODO: Implement
+      # @param  [String]   node          The node on which the file resides
+      # @param  [String]   access_level  See +Uv::Storage::File::ACL_*+ for details
+      # @param  [String]   path          The path to the file on the node
+      # @return [String]   Returns the file content
+      # 
+      def get(node, access_level, path)
+        begin
+          @content ||= self.client.get_content( self.url(node, access_level, path) )
+        rescue => e
+          logger.fatal "Error while retrieving file in Uv::Storage::Connection#get"
+          logger.fatal e
+          
+          raise NodeConnectionFailed.new
+        end
+        
+        return @content
+      end
+      
+      #
+      # Generate the appropiate url for a file, for getting and retrieving a file
+      #
+      # @param  [String]   node          The node on which the file resides
+      # @param  [String]   access_level  See +Uv::Storage::File::ACL_*+ for details
+      # @param  [String]   path          The path to the file on the node
+      # @return [String]   Returns the url, either with signature or not, depending on the access level
+      # 
+      def url(node, access_level, path)
+        params = {
+          'action' => 'get',
+          'path' => path
+        }
+        
+        @url ||= self.file_url(node, access_level, path, self.compute_signature(params) )
+        
+        return @url
       end
       
       # 
@@ -69,7 +108,6 @@ module Uv
       # 
       #   :signature => {
       #     :action       => 'create',
-      #     :path         => 'path/to/file.ext'   # => Path to the file
       #     :file         => Multipart-Data,      # => Data of the file in the http header (not cipher'd)
       #     :access_level => 'public'             # => public; protected; private;
       #     :md5_checksum => 'rrewfr45g'          # => checksum of the file for verification
@@ -91,8 +129,49 @@ module Uv
       #     :access_level => 'public'       # public; access-key; private;  
       #   }
       # 
-      def create
-        # TODO: Implement
+      def create(file, access_level)
+        file.close
+        
+        params = {
+          'action' => 'create',
+          'access_level' => access_level,
+          'md5_checksum' => Digest::MD5.hexdigest(::File.read(file.path)),
+          'original_filename' => file.respond_to?(:original_filename) ? file.original_filename : ::File.basename(file.path)
+        }
+        
+        logger.debug "Trying to send file to master http://#{Uv::Storage.master_domain}/create"
+        
+        signature = self.compute_signature(params)
+        
+        ::File.open(file.path) do |file|
+          data = { 
+            :file => file, 
+            :signature => signature
+          }
+          
+          begin
+            @result = self.client.post("http://#{Uv::Storage.master_domain}/create", data)
+          rescue => e
+            logger.fatal "An error occured in Uv::Storage::Connection#create"
+            logger.fatal e
+            
+            raise NodeConnectionFailed.new
+          end
+        end
+        
+        begin
+          @result = self.cipher.decrypt(@result.content)
+          @result = JSON.parse(@result)
+        rescue => e
+          logger.fatal "An error occured in Uv::Storage::Connection#create"
+          logger.fatal e
+          
+          raise KeyVerificationFailed.new
+        end
+        
+        logger.debug "Got /create result from master: #{@result.inspect}"
+        
+        return @result
       end
       
       # 
@@ -114,8 +193,28 @@ module Uv
       #     :load_avg           => 0.01              # => Current load on the node
       #   }
       #
-      def status
-        # TODO: Implement
+      def status(node)
+        params = {
+          'action' => 'status'
+        }
+        
+        logger.debug "Trying to retrieve the status from a node"
+        
+        signature = self.compute_signature(params)
+        
+        @status ||= self.client.get_content( "#{self.base_url(node)}/status/#{signature}" )
+        
+        begin
+          @status = self.cipher.decrypt(@status.content)
+          @status = JSON.parse(@status)
+        rescue => e
+          logger.fatal "An error occured in Uv::Storage::Connection#status"
+          logger.fatal e
+          
+          raise KeyVerificationFailed.new
+        end
+        
+        return @status
       end
       
       # 
@@ -138,8 +237,29 @@ module Uv
       #     :file_size         => 4835385489                     # => File size in bytes
       #   }
       #
-      def meta
-        # TODO: Implement
+      def meta(node, path)
+        params = {
+          'action' => 'meta'
+          'path' => path
+        }
+        
+        logger.debug "Trying to retrieve the meta for file #{path} from a node #{node}"
+        
+        signature = self.compute_signature(params)
+        
+        @meta ||= self.client.get_content( "#{self.base_url(node)}/meta/#{signature}" )
+        
+        begin
+          @meta = self.cipher.decrypt(@meta.content)
+          @meta = JSON.parse(@meta)
+        rescue => e
+          logger.fatal "An error occured in Uv::Storage::Connection#meta"
+          logger.fatal e
+          
+          raise KeyVerificationFailed.new
+        end
+        
+        return @meta
       end
       
       # 
@@ -190,9 +310,64 @@ module Uv
         # TODO: Implement, be aware that you to delete the file on ALL nodes.
       end
       
+      # 
+      # Generate the complete base domain for a node.
+      #
+      # Uses the +Uv::Storage.asset_domain+ for computing the url. Also takes the +Uv::Storage.use_ssl+ setting into
+      # account and changes the url to http:// and https:// accordingly.
+      # 
+      # == Example
+      #
+      #   url = self.base_url('node_name')
+      #   puts url # => http[s]://node_name.urbanclouds.com
+      # 
+      # @param  [String] node The node which you need the url for
+      # @return [String] The full url pointing to the node
+      #
       def base_url(node)
-        "http://#{node.to_s}.#{Uv::Storage.asset_domain}"
+        "#{Uv::Storage.use_ssl ? 'https://' : 'http://'}#{node.to_s}.#{Uv::Storage.asset_domain}"
       end
+      
+      #
+      # Compute the full url to a file in the cloud, including node and access level.
+      #
+      # Uses the +base_url+ method to generate the basic url. Depending on the access level (public or protected) either
+      # a direct url to node and file is generated or a signed url is generated.
+      #
+      # == Example
+      # 
+      #   # access level public
+      #   url = file_url('node_name')
+      #   puts url # => http[s]://node_name.urbanclouds.com/2010/09/file-name.ext
+      # 
+      #   # access level protected
+      #   url = file_url('node_name')
+      #   puts url # => http[s]://node_name.urbanclouds.com/2010/09/file-name.ext/signature
+      # 
+      # @param  [String]  node The which you need the url for
+      # @return [String] The full url to the file
+      #
+      def file_url(node, access_level, path, signature = "")
+        logger.debug "Generating file url."
+        logger.debug "Node:         #{node.to_s}"
+        logger.debug "Access Level: #{access_level}"
+        logger.debug "Path:         #{path}"
+        logger.debug "Signature:    #{signature}"
+        
+        if self.access_level == 'public'
+          "http://#{self.base_url(node)}/#{path}"
+        elsif self.access_level == 'protected'
+          raise MissingSignature.new if signature.blank?
+          
+          "http://#{self.base_url(node)}/get/#{signature}"
+        end
+      end
+      
+      protected
+      
+        def compute_signature(params)
+          return cipher.encrypt(params)
+        end
       
     end
     

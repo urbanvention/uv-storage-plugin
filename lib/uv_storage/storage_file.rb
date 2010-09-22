@@ -285,10 +285,10 @@ module Uv
         
         @urls = []
         self.nodes.each do |node|
-          @urls << file_url(node)
+          @urls << self.connection.url(node, self.access_level, self.path)
         end
         
-        @urls.shuffle!
+        @urls.shuffle!        # randomize url for load-balancing
         @url = @urls.first
         
         return @url
@@ -385,7 +385,7 @@ module Uv
         raise MissingFileMapping.new if mapping.blank?
         raise NodesMissing.new if mapping.nodes.blank?
         
-        @content ||= self.connection.get_file_content(self.mapping)
+        @content ||= self.connection.get(self.nodes.first, self.access_level, self.path)
         
         return @content
       end
@@ -500,56 +500,6 @@ module Uv
           raise ActiveRecordObjectInvalid.new("The object is nil") if object.nil?
           raise ActiveRecordObjectInvalid.new("The object is not valid") unless object.valid?
           raise ActiveRecordObjectInvalid.new("The object needs to be saved first") if object.new_record?
-        end
-        
-        # 
-        # Generate the complete base domain for a node.
-        #
-        # Uses the +Uv::Storage.asset_domain+ for computing the url. Also takes the +Uv::Storage.use_ssl+ setting into
-        # account and changes the url to http:// and https:// accordingly.
-        # 
-        # == Example
-        #
-        #   url = self.base_url('node_name')
-        #   puts url # => http[s]://node_name.urbanclouds.com
-        # 
-        # @param  [String] node The node which you need the url for
-        # @return [String] The full url pointing to the node
-        #
-        def base_url(node)
-          "#{Uv::Storage.use_ssl ? 'https://' : 'http://'}#{node.to_s}.#{Uv::Storage.asset_domain}"
-        end
-        
-        #
-        # Compute the full url to a file in the cloud, including node and access level.
-        #
-        # Uses the +base_url+ method to generate the basic url. Depending on the access level (public or protected) either
-        # a direct url to node and file is generated or a signed url is generated.
-        #
-        # == Example
-        # 
-        #   # access level public
-        #   url = file_url('node_name')
-        #   puts url # => http[s]://node_name.urbanclouds.com/2010/09/file-name.ext
-        # 
-        #   # access level protected
-        #   url = file_url('node_name')
-        #   puts url # => http[s]://node_name.urbanclouds.com/2010/09/file-name.ext/signature
-        # 
-        # @param  [String]  node The which you need the url for
-        # @return [String] The full url to the file
-        #
-        def file_url(node)
-          logger.debug "Generating file url."
-          logger.debug "Node:         #{node.to_s}"
-          logger.debug "Access Level: #{self.access_level}"
-          logger.debug "Path:         #{self.path}"
-          
-          if self.access_level == 'public'
-            "http://#{self.base_url(node)}/#{self.path}"
-          elsif self.access_level == 'protected'
-            "http://#{self.base_url(node)}/get/#{self.path}/#{self.connection.signature}"
-          end
         end
         
         #
