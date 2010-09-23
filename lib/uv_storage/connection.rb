@@ -42,10 +42,10 @@ module Uv
       attr_reader   :cipher
       
       def initialize(config = nil)
-        self.logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
-        self.config     = config.nil? ? Uv::Storage::Config.new : config
-        self.cipher     = Uv::Cipher.new(self.config.secret_key, self.config.access_key)
-        self.client     = HTTPClient.new
+        @logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+        @config     = config.nil? ? Uv::Storage::Config.new : config
+        @cipher     = Uv::Cipher.new(self.config.secret_key, self.config.access_key)
+        @client     = HTTPClient.new
       end
       
       # 
@@ -159,6 +159,8 @@ module Uv
             raise NodeConnectionFailed.new
           end
         end
+        
+        logger.debug "Received signed signature: #{@result.content}."
         
         begin
           @result = self.cipher.decrypt(@result.content)
@@ -399,12 +401,12 @@ module Uv
         logger.debug "Path:         #{path}"
         logger.debug "Signature:    #{signature}"
         
-        if self.access_level == 'public'
-          "http://#{self.base_url(node)}/#{path}"
+        if access_level == 'public'
+          "#{self.base_url(node)}/#{path}"
         elsif self.access_level == 'protected'
           raise MissingSignature.new if signature.blank?
           
-          "http://#{self.base_url(node)}/get/#{signature}"
+          "#{self.base_url(node)}/get/#{signature}"
         end
       end
       
