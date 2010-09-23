@@ -8,7 +8,7 @@
 end
 
 require 'uv_storage/config'
-require 'uv_storage/storage_file'
+require 'uv_storage/file'
 require 'uv_storage/connection'
 
 module Uv #:nodoc:

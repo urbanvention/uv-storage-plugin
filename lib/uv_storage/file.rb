@@ -57,29 +57,29 @@ module Uv
       # The +File+ object needs to be either a Ruby +File+ object or a +Tempfile+ object.
       # 
       def initialize(*args)
-        self.logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
-        self.options    = {
+        @logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+        @options    = {
           :access_level => 'public-read',
           :file_mapping => nil,
           :object => nil
         }
-        self.options.update(args.extract_options!)
-        self.options.stringify_keys!
+        @options.update(args.extract_options!)
+        @options.stringify_keys!
         
-        self.raw_file   = args.first if args.first.is_a?(File) or args.first.is_a?(Tempfile)
-        self.config     = Uv::Storage::Config.new
-        self.connection = Uv::Storage::Connection.new(self.config)
-        self.object     = self.options['object']
-        
-        raise ActiveRecordObjectMissing.new if self.object.blank?
-        validate_object(self.object)
+        @raw_file   = args.first
+        @config     = Uv::Storage::Config.new
+        @connection = Uv::Storage::Connection.new(self.config)
+        @object     = @options['object']
         
         logger.debug "Initializing new Uv::Storage::File"
-        logger.debug "Config loaded:        #{config.inspect}"
-        logger.debug "Connection loaded:    #{connection.inspect}"
-        logger.debug "Object given:         #{object.inspect}"
-        logger.debug "Raw File given:       #{raw_file.inspect}"
-        logger.debug "Options given:        #{options.inspect}"
+        logger.debug "Args First is a:      #{args.first.class.to_s}"
+        logger.debug "Config loaded:        #{config.present?}"
+        logger.debug "Connection loaded:    #{connection.present?}"
+        logger.debug "Object given:         #{object.present?}"
+        logger.debug "Raw File given:       #{@raw_file.present?}"
+        logger.debug "Options given:        #{options.present?}"
+        
+        validate_object(@object) if @object.present?
       end
       
       class << self
@@ -516,7 +516,14 @@ module Uv
         end
         
         def mapping
-          self.options['file_mapping']
+          if self.options['file_mapping'].blank? and self.object.present?
+            self.options['file_mapping'] = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(
+              self.object.class.to_s.downcase.to_s, 
+              self.object.id
+            )
+          end
+          
+          return self.options['file_mapping']
         end
         
         def mapping=(map)

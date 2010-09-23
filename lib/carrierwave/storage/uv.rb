@@ -6,7 +6,7 @@ rescue LoadError
   raise "UV Storage not available"
 end
 
-module Uv
+module CarrierWave
   module Storage
     ##
     # Uploads things to urbanvention storage.
@@ -33,15 +33,18 @@ module Uv
     #
     #     http://node_name.urbanstorage.com/path/signature
     #
-    class CarrierWave < CarrierWave::Storage::Abstract
+    class Uv < CarrierWave::Storage::Abstract
 
-      class StorageFile
+      class File
         
         attr_accessor :object
         attr_accessor :uv_file
+        attr_reader :logger
         
         def initialize(uploader, base, path)
-          puts 'New carrier wave file'
+          @logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+          
+          logger.debug 'Initalizing new Carrierwave Uv::File instance'
           
           @uploader = uploader
           @path = path
@@ -52,10 +55,10 @@ module Uv
           @object.save_without_validation if @object.new_record?
           
           if @object.present?
-            mapping = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id)
-            @uv_file = Uv::Storage::StorageFile.new(:file_mapping => mapping)
+            #mapping = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id)
+            @uv_file = ::Uv::Storage::File.new(:object => @object)
           else
-            puts 'no object present'
+            logger.debug 'New Record created, there was no object given.'
           end
         end
 
@@ -100,20 +103,21 @@ module Uv
         end
 
         def store(file)
-          puts "Storing File in Object: #{file.class}"
-          puts "Sanitized file #{file.original_filename} / #{file.file.class}"
+          logger.debug "Storing File in Object: #{file.class}"
+          logger.debug "Sanitized file #{file.original_filename} / #{file.file.class}"
           
-          f = File.open("#{RAILS_ROOT}/tmp/#{file.original_filename}", "w+")
+          f = ::File.open("#{RAILS_ROOT}/tmp/#{file.original_filename}", "w+")
           f.write file.read
             
-          puts "Saved File #{f.class} / #{File.basename(f.path)}"
+          logger.debug "Saved File #{f.class} / #{::File.basename(f.path)}"
 
-          @uv_file = Uv::Storage::StorageFile.new(f, :object => @object)
+          @uv_file = ::Uv::Storage::File.new(f, :object => @object)
           
           begin
             @uv_file.save
           rescue Exception => e
-            puts "Error saving file #{e.inspect}"
+            logger.fatal "Error saving file"
+            logger.fatal e
           end
         end
 
@@ -160,7 +164,7 @@ module Uv
       # [Uv::Storage::File] the stored file
       #
       def store!(file)
-        f = Uv::Storage::CarrierWave::StorageFile.new(uploader, self, uploader.store_path(identifier))
+        f = CarrierWave::Storage::Uv::File.new(uploader, self, uploader.store_path(identifier))
         f.store(file)
         return f
       end
@@ -176,10 +180,15 @@ module Uv
       # [Uv::Storage::File] the stored file
       #
       def retrieve!(identifier)
-        puts 'Called retrieve with ' + identifier.to_s
-        f = Uv::Storage::CarrierWave::StorageFile.new(uploader, self, identifier)
+        logger.debug "Carrierwave retrieve was called with #{identifier}."
+        
+        f = CarrierWave::Storage::Uv::File.new(uploader, self, identifier)
         uploader.instance_variable_set(:@file, f)
         return f
+      end
+      
+      def logger
+        @logger ||= Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
       end
 
     end # S3
