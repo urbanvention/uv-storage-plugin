@@ -3,6 +3,7 @@ class CreateFileMappings < ActiveRecord::Migration
     create_table :file_mappings do |t|
       t.column :object_name,        :string
       t.column :object_identifier,  :integer
+      t.column :identifier,         :string
       t.column :nodes,              :text
       t.column :file_id,            :integer
       t.column :file_path,          :string

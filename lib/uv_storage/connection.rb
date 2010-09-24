@@ -94,7 +94,7 @@ module Uv
           'path' => path
         }
         
-        @url ||= self.file_url(node, access_level, path, self.compute_signature(params) )
+        @url = self.file_url(node, access_level, path, self.compute_signature(params) )
         
         return @url
       end
@@ -141,7 +141,7 @@ module Uv
         
         logger.debug "Trying to send file to master http://#{Uv::Storage.master_domain}/create"
         
-        signature = self.compute_signature(params)
+        signature = self.compute_signature(params, false)
         
         ::File.open(file.path) do |file|
           data = { 
@@ -244,14 +244,23 @@ module Uv
           'path' => path
         }
         
-        logger.debug "Trying to retrieve the meta for file #{path} from a node #{node}"
-        
         signature = self.compute_signature(params)
         
-        @meta ||= self.client.get_content( "#{self.base_url(node)}/meta/#{signature}" )
+        logger.debug "Trying to retrieve the meta for file #{path} from a node #{node}, URL: #{self.base_url(node)}/meta/#{signature}"
         
         begin
-          @meta = self.cipher.decrypt(@meta.content)
+          @meta ||= self.client.get_content( "#{self.base_url(node)}/meta/#{signature}" )
+        rescue => e
+          logger.fatal "An error occured in Uv::Storage::Connection#meta"
+          logger.fatal e
+          
+          raise NodeConnectionFailed.new
+        end
+        
+        begin
+          logger.debug "Result was: #{@meta}"
+          
+          @meta = self.cipher.decrypt(@meta)
         rescue => e
           logger.fatal "An error occured in Uv::Storage::Connection#meta"
           logger.fatal e
@@ -294,7 +303,7 @@ module Uv
         }
         params.update(update_options)
         
-        signature = self.compute_signature(params)
+        signature = self.compute_signature(params, false)
         
         nodes.each do |node|
           begin
@@ -341,11 +350,11 @@ module Uv
           'path' => path
         }
         
-        signature = self.compute_signature(params)
+        signature = self.compute_signature(params, false)
         
         nodes.each do |node|
           begin
-            self.client.post("#{self.base_url(node)}/update", { :signature => signature })
+            self.client.post("#{self.base_url(node)}/delete", { :signature => signature })
           rescue => e
             logger.fatal "An error occured in Uv::Storage::Connection#delete"
             logger.fatal e
@@ -403,7 +412,7 @@ module Uv
         
         if access_level == 'public'
           "#{self.base_url(node)}/#{path}"
-        elsif self.access_level == 'protected'
+        elsif access_level == 'protected'
           raise MissingSignature.new if signature.blank?
           
           "#{self.base_url(node)}/get/#{signature}"
@@ -412,8 +421,12 @@ module Uv
       
       protected
       
-        def compute_signature(params)
-          return cipher.encrypt(params)
+        def compute_signature(params, cgi_escape = true)
+          if cgi_escape
+            return CGI.escape(cipher.encrypt(params))
+          else
+            return cipher.encrypt(params)
+          end
         end
       
     end

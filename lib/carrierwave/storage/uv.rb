@@ -55,8 +55,15 @@ module CarrierWave
           @object.save_without_validation if @object.new_record?
           
           if @object.present?
-            #mapping = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id)
-            @uv_file = ::Uv::Storage::File.new(:object => @object)
+            mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id)
+            
+            # if it is a thumbnail
+            if uploader.version_name.present?
+              identifier = [uploader.version_name, mapping.identifier].compact.join('_')
+              @uv_file = ::Uv::Storage::File.new(:object => @object, :identifier => identifier)
+            else
+              @uv_file = ::Uv::Storage::File.new(:object => @object, :file_mapping => mapping)
+            end
           else
             logger.debug 'New Record created, there was no object given.'
           end
@@ -71,6 +78,10 @@ module CarrierWave
         #
         def path
           @uv_file.path
+        end
+        
+        def identifier
+          @uv_file.filename
         end
 
         ##
@@ -111,7 +122,7 @@ module CarrierWave
             
           logger.debug "Saved File #{f.class} / #{::File.basename(f.path)}"
 
-          @uv_file = ::Uv::Storage::File.new(f, :object => @object)
+          @uv_file = ::Uv::Storage::File.new(f, :object => @object, :identifier => file.original_filename)
           
           begin
             @uv_file.save
@@ -120,22 +131,22 @@ module CarrierWave
             logger.fatal e
           end
         end
-
-        # The Amazon S3 Access policy ready to send in storage request headers.
-        def access_policy
-          @uv_file.access_level
+        
+        def access_level=(acl)
+          @uv_file.access_level = acl
         end
 
-        def content_type
-          @uv_file.content_type
+        # The Amazon S3 Access policy ready to send in storage request headers.
+        def method_missing(method_name, *args)
+          if @uv_file.respond_to?(method_name.to_sym)# and not method_name.to_s == 'filename'
+            @uv_file.send(method_name.to_sym)
+          else
+            super
+          end
         end
 
         def content_type=(type)
           # 
-        end
-
-        def size
-         	@uv_file.size
         end
 
         # Headers returned from file retrieval
@@ -180,8 +191,6 @@ module CarrierWave
       # [Uv::Storage::File] the stored file
       #
       def retrieve!(identifier)
-        logger.debug "Carrierwave retrieve was called with #{identifier}."
-        
         f = CarrierWave::Storage::Uv::File.new(uploader, self, identifier)
         uploader.instance_variable_set(:@file, f)
         return f

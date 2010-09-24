@@ -78,6 +78,7 @@ module Uv
         logger.debug "Object given:         #{object.present?}"
         logger.debug "Raw File given:       #{@raw_file.present?}"
         logger.debug "Options given:        #{options.present?}"
+        logger.debug "Identifier given:     #{options['identifier'].present?}"
         
         validate_object(@object) if @object.present?
       end
@@ -94,6 +95,8 @@ module Uv
         # Either an id or an object has to be given.
         #
         def exists?(*args)
+          options = args.extract_options!
+          
           begin
             if args.first.is_a?(Integer)
               # find the mapping
@@ -101,10 +104,18 @@ module Uv
 
               raise MissingFileMapping.new unless mapping.present?
             elsif args.first.kind_of?(ActiveRecord::Base)
-              mapping = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(
-                args.first.class.to_s.downcase, 
-                args.first.id
-              )
+              if options['identifier'].present?
+                mapping = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier_and_identifier(
+                  args.first.class.to_s.downcase, 
+                  args.first.id,
+                  options['identifier']
+                )
+              else
+                mapping = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(
+                  args.first.class.to_s.downcase, 
+                  args.first.id
+                )
+              end
             end
             
             @file = Uv::Storage::StorageFile.new(:file_mapping => mapping)
@@ -212,17 +223,18 @@ module Uv
       # @return [Boolean] Returns true or false wether the operation succeeded or failed.
       # 
       def access_level=(lvl)
-        @access_level = lvl
-        lvl = uv_access_level
+        logger.debug "Setting new access_level in Uv::Storage::File#access_level=#{lvl}"
         
-        logger.debug "Setting new access_level in Uv::Storage::File#access_level="
+        #@access_level = lvl
+        lvl = uv_access_level(lvl)
+        
         logger.debug "New access_level is '#{lvl}'"
         
         begin
           if self.mapping.present?
             logger.debug "File already exists on Uv::Storage, trying to update the record"
             
-            self.connection.update(mapping.nodes, mapping.path, { 'access_level' => lvl } )
+            self.mapping.file_path = self.connection.update(mapping.nodes, mapping.file_path, { 'access_level' => lvl } )
             self.mapping.access_level = lvl 
             self.mapping.save
           end
@@ -252,7 +264,7 @@ module Uv
       def filename
         raise MissingFileMapping.new if mapping.blank?
         
-        return mapping.path.present? ? File.basename(File.join("/", mapping.path)) : false
+        return mapping.file_path.present? ? ::File.basename(::File.join("/", mapping.file_path)) : false
       end
       
       # 
@@ -284,10 +296,9 @@ module Uv
           @urls << self.connection.url(node, self.access_level, self.path)
         end
         
-        @urls.shuffle!        # randomize url for load-balancing
-        @url = @urls.first
-        
-        return @url
+          logger.debug "URLS: #{@urls.inspect}"
+          
+        return @urls.shuffle.first        # randomize url for load-balancing
       end
       
       # 
@@ -305,7 +316,8 @@ module Uv
         raise NodesMissing.new if mapping.nodes.blank?
         
         begin
-          self.connection.delete(mapping.nodes, mapping.path)
+          self.connection.delete(mapping.nodes, mapping.file_path)
+          self.mapping.delete
 
           return true
         rescue => e
@@ -358,7 +370,7 @@ module Uv
         
         retrieve_meta!
         
-        return self.meta['size'].to_s
+        return self.meta['file_size'].to_i
       end
       
       # 
@@ -411,16 +423,18 @@ module Uv
         validate_object(self.object)
         
         logger.debug "Sending file to master in Uv::Storage::File#save"
+        
         raise FileObjectMissing.new if self.raw_file.blank?
         
-        @result = self.connection.create(self.raw_file, self.options['access_level'])
+        @result = self.connection.create(self.raw_file, uv_access_level(self.options['access_level']))
         
         self.mapping = Uv::Storage::FileMapping.new( 
           :nodes => @result['node_domains'], 
           :file_path => @result['path'], 
-          :access_level => @result['access_level'],
+          :access_level => uv_access_level(@result['access_level']),
           :object_name => self.object.class.to_s.downcase,
-          :object_identifier => self.object.id
+          :object_identifier => self.object.id,
+          :identifier => self.options['identifier']
         )
           
         logger.debug "Trying to save mapping in Uv::Storage::File#save"
@@ -502,8 +516,10 @@ module Uv
         # 
         # Convert amazon style access level to internal one
         # 
-        def uv_access_level
-          case self.access_level.to_s
+        def uv_access_level(access_level = nil)
+          access_level = self.access_level if access_level.blank?
+          
+          case access_level.to_s
           when 'public-read', 'public'
             Uv::Storage::File::ACL_PUBLIC
           when 'authenticated-read', 'protected'
@@ -517,16 +533,26 @@ module Uv
         
         def mapping
           if self.options['file_mapping'].blank? and self.object.present?
-            self.options['file_mapping'] = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(
-              self.object.class.to_s.downcase.to_s, 
-              self.object.id
-            )
+            if self.options['identifier'].present?
+              self.options['file_mapping'] = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier_and_identifier(
+                self.object.class.to_s.downcase.to_s, 
+                self.object.id,
+                self.options['identifier']
+              )
+            else
+              self.options['file_mapping'] = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(
+                self.object.class.to_s.downcase.to_s, 
+                self.object.id
+              )
+            end
           end
           
           return self.options['file_mapping']
         end
         
         def mapping=(map)
+          logger.debug "Setting new mapping"
+          
           self.options['file_mapping'] = map
         end
       
