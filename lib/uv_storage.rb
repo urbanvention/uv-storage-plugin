@@ -28,7 +28,7 @@ module Uv #:nodoc:
     @@use_ssl       = false
     
     mattr_accessor :log_level
-    @@log_level     = Logger::WARN
+    @@log_level     = Logger::DEBUG
     
     mattr_accessor :logger
     mattr_accessor :orm
@@ -49,8 +49,8 @@ module Uv #:nodoc:
     end
     
     def self.logger
-      @@logger      ||= Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
-      @@logger.level  = Uv::Storage.log_level
+      @@logger        ||= Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
+      @@logger.level  = Logger::DEBUG
       return @@logger
     end
     

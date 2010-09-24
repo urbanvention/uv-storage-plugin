@@ -1,5 +1,5 @@
 # Require needed libraries
-%w{ httpclient json logger fileutils active_support }.each do |lib|
+%w{ httpclient json logger fileutils }.each do |lib|
   begin
     require lib
   rescue
@@ -7,18 +7,18 @@
   end
 end
 
-require 'active_support/core_ext/object/blank'
+#require 'active_support/core_ext/object/blank'
 require 'uv_storage'
 
-begin
+# begin
   require 'carrierwave'
-rescue => e
-  puts 'Carrierwave not loaded.'
-end
-
+# rescue => e
+  # puts 'Carrierwave not loaded.'
+# end
 
 # Configure CarrierWave if present
 if defined?(CarrierWave)
+  puts 'Configuring CarrierWave'
   require 'carrierwave/storage/abstract'
   require 'carrierwave/storage/uv'
   

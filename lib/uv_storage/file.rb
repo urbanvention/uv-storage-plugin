@@ -471,6 +471,12 @@ module Uv
         return mapping.nodes
       end
       
+      def identifier
+        raise MissingFileMapping.new if mapping.blank?
+        
+        return mapping.identifier.to_s
+      end
+      
       # 
       # Returns the path of the file on the nodes.
       # 
@@ -509,7 +515,7 @@ module Uv
         # 
         def validate_object(object)
           raise ActiveRecordObjectInvalid.new("The object is nil") if object.nil?
-          raise ActiveRecordObjectInvalid.new("The object is not valid") unless object.valid?
+          #raise ActiveRecordObjectInvalid.new("The object is not valid") unless object.valid?
           raise ActiveRecordObjectInvalid.new("The object needs to be saved first") if object.new_record?
         end
         

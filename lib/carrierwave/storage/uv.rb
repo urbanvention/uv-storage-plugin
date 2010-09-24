@@ -35,7 +35,7 @@ module CarrierWave
         attr_reader :logger
         
         def initialize(uploader, base, path)
-          @logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+          @logger     = Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
           
           logger.debug 'Initalizing new Carrierwave Uv::File instance'
           
@@ -49,17 +49,23 @@ module CarrierWave
           
           if @object.present?
             mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id)
+            logger.debug "Found mapping: #{mapping.present?}"
+            logger.debug "Version name: #{uploader.version_name.present?}"
             
             # if it is a thumbnail
             if uploader.version_name.present?
-              identifier = [uploader.version_name, mapping.identifier].compact.join('_')
-              @uv_file = ::Uv::Storage::File.new(:object => @object, :identifier => identifier)
+              ident = [uploader.version_name, mapping.identifier].compact.join('_')
+              @uv_file = ::Uv::Storage::File.new(:object => @object, :identifier => ident)
             else
+              logger.debug "Trying to find parent: #{@object.present?} / #{mapping.present?}"
               @uv_file = ::Uv::Storage::File.new(:object => @object, :file_mapping => mapping)
+              logger.debug 'Finding parent finished.'
             end
           else
             logger.debug 'New Record created, there was no object given.'
           end
+          
+          logger.debug 'Initalizing finished.'
         end
 
         ##
@@ -75,6 +81,10 @@ module CarrierWave
         
         def identifier
           @uv_file.filename
+        end
+        
+        def original_filename
+          @uv_file.identifier
         end
 
         ##
@@ -186,13 +196,24 @@ module CarrierWave
       # [Uv::Storage::File] the stored file
       #
       def retrieve!(identifier)
+        logger.debug "Called retrieve with #{identifier}"
+        
         f = CarrierWave::Storage::Uv::File.new(uploader, self, identifier)
-        uploader.instance_variable_set(:@file, f)
-        return f
+        
+        logger.debug "File created: #{f.uv_file.present?}"
+          
+        if f.uv_file.present?
+          logger.debug "Uv_File present: #{f.uv_file.present?}"
+          uploader.instance_variable_set(:@file, f)
+          return f
+        else
+          raise 'file not found'
+          return nil
+        end
       end
       
       def logger
-        @logger ||= Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+        @logger ||= Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
       end
 
     end # S3
