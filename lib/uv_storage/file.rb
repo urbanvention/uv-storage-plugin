@@ -30,7 +30,6 @@ module Uv
       # access level of the current object in the cloud
       attr_accessor :access_level
       
-      # rails logger
       attr_reader :logger
       
       # access levels, see +access_level+ for more details
@@ -57,7 +56,8 @@ module Uv
       # The +File+ object needs to be either a Ruby +File+ object or a +Tempfile+ object.
       # 
       def initialize(*args)
-        @logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+        @logger     = Uv::Storage.logger
+        
         @options    = {
           :access_level => 'public-read',
           :file_mapping => nil,

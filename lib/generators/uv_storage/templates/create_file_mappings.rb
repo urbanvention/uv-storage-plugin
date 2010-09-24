@@ -11,9 +11,17 @@ class CreateFileMappings < ActiveRecord::Migration
       t.column :created_at,         :datetime
       t.column :updated_at,         :datetime
     end    
+    
+    add_index :file_mappings, :object_name
+    add_index :file_mappings, :object_identifier
+    add_index :file_mappings, :identifier
   end
 
   def self.down
+    remove_index :file_mappings, :identifier
+    remove_index :file_mappings, :object_identifier
+    remove_index :file_mappings, :object_name
+    
     drop_table :file_mappings
   end
 end

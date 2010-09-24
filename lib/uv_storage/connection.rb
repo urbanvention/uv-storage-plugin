@@ -38,11 +38,12 @@ module Uv
       
       attr_accessor :config
       attr_accessor :client
-      attr_reader   :logger
       attr_reader   :cipher
+      attr_reader   :logger
       
       def initialize(config = nil)
-        @logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+        @logger     = Uv::Storage.logger
+        
         @config     = config.nil? ? Uv::Storage::Config.new : config
         @cipher     = Uv::Cipher.new(self.config.secret_key, self.config.access_key)
         @client     = HTTPClient.new

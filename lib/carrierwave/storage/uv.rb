@@ -1,11 +1,4 @@
 # encoding: utf-8
-begin
-  require 'uv_storage'
-  require 'carrierwave/storage/abstract'
-rescue LoadError
-  raise "UV Storage not available"
-end
-
 module CarrierWave
   module Storage
     ##

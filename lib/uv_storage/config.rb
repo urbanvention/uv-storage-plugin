@@ -10,9 +10,7 @@ module Uv
       
       # Currently loaded configuration
       attr_accessor :config
-      
       attr_reader :logger
-      
       # 
       # Initialize the configuration object
       # Loads the configuration from RAILS_ROOT/config/uv_storage.yml if +config_path+ is omitted.
@@ -25,7 +23,7 @@ module Uv
       #   @config.config_path   # Get the path of the current config file
       # 
       def initialize(config_path = nil)
-        @logger     = Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+        @logger = Uv::Storage.logger
         
         self.config_path = config_path.nil? ? "#{RAILS_ROOT}/config/uv_storage.yml" : config_path
         self.config = YAML.load_file(self.config_path)

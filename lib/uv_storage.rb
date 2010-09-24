@@ -1,12 +1,3 @@
-# Require needed libraries
-%w{ httpclient json }.each do |lib|
-  begin
-    require lib
-  rescue
-    puts "#{lib} not found, please install it with `gem install #{lib}`"
-  end
-end
-
 require 'uv_storage/config'
 require 'uv_storage/file'
 require 'uv_storage/connection'
@@ -34,7 +25,13 @@ module Uv #:nodoc:
     # Currently not supported, used for ssl switch for domains.
     # 
     mattr_accessor :use_ssl
-    @@use_ssl = false
+    @@use_ssl       = false
+    
+    mattr_accessor :log_level
+    @@log_level     = Logger::WARN
+    
+    mattr_accessor :logger
+    mattr_accessor :orm
     
     # 
     # Configuration method, which allows you to set different configuration option through a block in a file in your
@@ -49,6 +46,12 @@ module Uv #:nodoc:
     # 
     def self.config
       yield self
+    end
+    
+    def self.logger
+      @@logger      ||= Logger.new("#{RAILS_ROOT}/log/#{RAILS_ENV}.log")
+      @@logger.level  = Uv::Storage.log_level
+      return @@logger
     end
     
   end
