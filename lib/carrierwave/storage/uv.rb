@@ -130,6 +130,8 @@ module CarrierWave
             logger.fatal "Error saving file"
             logger.fatal e
           end
+          
+          File.unlink(f.path)
         end
         
         def access_level=(acl)
