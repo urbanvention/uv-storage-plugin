@@ -131,7 +131,7 @@ module CarrierWave
             logger.fatal e
           end
           
-          File.unlink(f.path)
+          ::File.unlink(f.path)
         end
         
         def access_level=(acl)
