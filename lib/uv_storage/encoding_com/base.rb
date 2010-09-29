@@ -1,4 +1,5 @@
 require 'uv_storage/encoding_com/job'
+require 'uv_storage/encoding_com/result'
 
 module Uv
   module Storage
