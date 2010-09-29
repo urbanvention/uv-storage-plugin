@@ -1,6 +1,7 @@
 require 'uv_storage/config'
 require 'uv_storage/file'
 require 'uv_storage/connection'
+require 'uv_storage/encoding_com/base'
 
 module Uv #:nodoc:
   module Storage #:nodoc:

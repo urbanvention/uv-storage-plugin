@@ -6,6 +6,7 @@ module Uv
   module Storage
     
     class NodeConnectionFailed < StandardError; end;
+    class MasterConnectionFailed < StandardError; end;
     class MissingSignature < StandardError; end;
     class KeyVerificationFailed < StandardError; end;
     
@@ -79,6 +80,45 @@ module Uv
         end
         
         return @content
+      end
+      
+      # @todo Document
+      def request(api_path, method = 'get', params = {})
+        begin
+          params.stringify_keys!
+          params.update('access_key' => self.config.access_key)
+          
+          @url = "#{master_url}#{api_path}"
+          
+          if method == 'get'
+            signature = compute_signature(params)
+            data = {
+              :signature => signature,
+              :access_key => self.config.access_key
+            }
+            
+            @request_result = self.client.get_content( @url, data )
+          elsif method == 'post'
+            signature = compute_signature(params, false)
+            data = {
+              :signature => signature,
+              :access_key => self.config.access_key
+            }
+            
+            @request_result = self.client.post_content( @url, data )
+          else
+            raise ArgumentError.new('method not supported')
+          end
+          
+          @request_result = self.cipher.decrypt(@request_result)
+        rescue => e
+          logger.fatal "Error while retrieving file in Uv::Storage::Connection#request"
+          logger.fatal e
+          
+          raise MasterConnectionFailed.new
+        end
+        
+        return @request_result
       end
       
       #
@@ -383,6 +423,11 @@ module Uv
       #
       def base_url(node)
         "#{Uv::Storage.use_ssl ? 'https://' : 'http://'}#{node.to_s}.#{Uv::Storage.asset_domain}"
+      end
+      
+      # @todo Document
+      def master_url()
+        "#{Uv::Storage.use_ssl ? 'https://' : 'http://'}#{Uv::Storage.master_domain}"
       end
       
       #
