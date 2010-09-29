@@ -48,7 +48,7 @@ module CarrierWave
           @object.save_without_validation if @object.new_record?
           
           if @object.present?
-            mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id)
+            mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id, :order => 'id asc')
             logger.debug "Found mapping: #{mapping.present?}"
             logger.debug "Version name: #{uploader.version_name.present?}"
             
