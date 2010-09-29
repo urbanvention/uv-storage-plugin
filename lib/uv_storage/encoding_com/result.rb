@@ -39,17 +39,23 @@ module Uv
             # find original 
             original_mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(
               self.object.class.to_s.downcase.to_s, 
-              self.object.id
+              self.object.id,
+              :order => 'id asc'
             )
             
             @results.each do |format, attrs|
-              mapping                   = Uv::Storage::FileMapping.new
+              object_name       = self.object.class.to_s.downcase
+              object_identifier = self.object.id
+              identifier        = [format, original_mapping.identifier].compact.join('_')
+              
+              mapping = Uv::Storage::FileMapping.find_by_object_name_and_object_identifier_and_identifier(
+                object_name, object_identifier, identifier
+              )
+              
               mapping.nodes             = attrs['node_domains']
               mapping.access_level      = attrs['access_level']
               mapping.file_path         = attrs['path']
-              mapping.object_name       = self.object.class.to_s.downcase
-              mapping.object_identifier = self.object.id
-              mapping.identifier        = [format, original_mapping.identifier].compact.join('_')
+              
               mapping.save
             end
             
