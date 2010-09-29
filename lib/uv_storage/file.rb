@@ -286,7 +286,7 @@ module Uv
       # @return [String]    Returns a url string, or raises an exception if something is missing
       # 
       def url(expires = nil)
-        raise MissingFileMapping.new if mapping.blank?
+        raise MissingFileMapping.new("Identifier: #{options['identifier']}") if mapping.blank?
         raise NodesMissing.new if mapping.nodes.blank?
         
         logger.debug "URLs are beeing generated."
