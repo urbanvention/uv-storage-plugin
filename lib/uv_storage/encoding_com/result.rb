@@ -8,6 +8,7 @@ module Uv
         attr_accessor :params
         attr_accessor :connection
         attr_accessor :logger
+        attr_accessor :status
         
         def initialize(params, object)
           self.params = params
@@ -21,7 +22,7 @@ module Uv
         end
         
         def succeeded?
-          
+          self.status == 'success'
         end
         
         protected
@@ -30,8 +31,25 @@ module Uv
             signature = params['signature']
             
             @results = self.connection.cipher.decrypt(signature)
+            @results.stringify_keys!
             
-            logger.debug "#{@results.inspect}"
+            @results.delete('hash')
+            @results.delete('time')
+            
+            @results.each do |format, attrs|
+              mapping                   = Uv::Storage::FileMapping.new
+              mapping.nodes             = attrs['node_domains']
+              mapping.access_level      = attrs['access_level']
+              mapping.file_path         = attrs['path']
+              mapping.object_name       = self.object.class.to_s.downcase
+              mapping.object_identifier = self.object.id
+              mapping.identifier        = format
+              mapping.save!
+            end
+            
+            self.status = 'success'
+            
+            # logger.debug "#{@results.inspect}"
           end
         
       end
