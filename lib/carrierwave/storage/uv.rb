@@ -54,6 +54,8 @@ module CarrierWave
             
             # if it is a thumbnail
             if uploader.version_name.present?
+              logger.debug "Running initialize #{uploader.version_name}"
+              
               ident = [uploader.version_name, mapping.identifier].compact.join('_')
               @uv_file = ::Uv::Storage::File.new(:object => @object, :identifier => ident)
             else
