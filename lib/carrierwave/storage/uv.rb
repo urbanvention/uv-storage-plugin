@@ -45,7 +45,12 @@ module CarrierWave
           @path = path
           @base = base
           @object = @uploader.model
-          @store = uploader.store_versions? || true
+          
+          if uploader.respond_to?(:store_versions?) and not uploader.store_versions?
+            @store = false
+          else
+            @store = true
+          end
           
           # try to find an existing file
           @object.save_without_validation if @object.new_record?
@@ -189,8 +194,6 @@ module CarrierWave
       # [Uv::Storage::File] the stored file
       #
       def store!(file)
-        return uploader.store_versions?
-        
         f = CarrierWave::Storage::Uv::File.new(uploader, self, uploader.store_path(identifier))
         f.store(file)
         return f
