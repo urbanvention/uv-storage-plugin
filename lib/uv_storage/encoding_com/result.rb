@@ -43,33 +43,20 @@ module Uv
               :order => 'id asc'
             )
             
-            logger.debug "Original mapping: #{original_mapping.inspect}"
-            
             @results.each do |format, attrs|
-              object_name       = self.object.class.to_s.downcase
-              object_identifier = self.object.id
-              identifier        = [format, original_mapping.identifier].compact.join('_')
-              
-              logger.debug "Object name: #{object_name}"
-              logger.debug "Object identifier: #{object_identifier}"
-              logger.debug "Object Identifier: #{identifier}"
-              
-              mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier_and_identifier(
-                object_name, object_identifier, identifier
-              )
-              
-              logger.debug "Found FileMapping: #{mapping.inspect}"
-              
+              mapping                   = Uv::Storage::FileMapping.new
               mapping.nodes             = attrs['node_domains']
               mapping.access_level      = attrs['access_level']
               mapping.file_path         = attrs['path']
-              
-              logger.debug "Updating record"
-              
-              mapping.save!
+              mapping.object_name       = self.object.class.to_s.downcase
+              mapping.object_identifier = self.object.id
+              mapping.identifier        = [format, original_mapping.identifier].compact.join('_')
+              mapping.save
             end
             
             self.status = 'success'
+            
+            # logger.debug "#{@results.inspect}"
           end
         
       end
