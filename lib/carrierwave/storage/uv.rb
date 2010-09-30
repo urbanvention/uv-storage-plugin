@@ -33,20 +33,24 @@ module CarrierWave
         attr_accessor :object
         attr_accessor :uv_file
         attr_reader :logger
+        attr_accessor :store
         
         def initialize(uploader, base, path)
           @logger     = Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
           
           logger.debug 'Initalizing new Carrierwave Uv::File instance'
-          logger.debug "Uploader Versions Options: #{uploader.version_options}"
+          logger.debug "Uploader Versions Options: #{uploader.store_versions?}"
           
           @uploader = uploader
           @path = path
           @base = base
           @object = @uploader.model
+          @store = uploader.store_versions? || true
           
           # try to find an existing file
           @object.save_without_validation if @object.new_record?
+          
+          return unless @store
           
           if @object.present?
             mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id, :order => 'id asc')
@@ -120,6 +124,8 @@ module CarrierWave
         end
 
         def store(file)
+          return unless @store
+          
           logger.debug "Storing File in Object: #{file.class}"
           logger.debug "Sanitized file #{file.original_filename} / #{file.file.class}"
           
@@ -183,6 +189,8 @@ module CarrierWave
       # [Uv::Storage::File] the stored file
       #
       def store!(file)
+        return uploader.store_versions?
+        
         f = CarrierWave::Storage::Uv::File.new(uploader, self, uploader.store_path(identifier))
         f.store(file)
         return f
