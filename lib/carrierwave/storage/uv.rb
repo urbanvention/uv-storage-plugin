@@ -86,15 +86,15 @@ module CarrierWave
         # [String] A path
         #
         def path
-          @uv_file.path
+          @uv_file.path if @uv_file.present?
         end
         
         def identifier
-          @uv_file.filename
+          @uv_file.filename if @uv_file.present?
         end
         
         def original_filename
-          @uv_file.identifier
+          @uv_file.identifier if @uv_file.present?
         end
 
         ##
@@ -105,14 +105,14 @@ module CarrierWave
         # [String] contents of the file
         #
         def read
-          @uv_file.read
+          @uv_file.read if @uv_file.present?
         end
 
         ##
         # Remove the file from Uv::Storage
         #
         def delete
-          @uv_file.destroy
+          @uv_file.destroy if @uv_file.present?
         end
 
         ##
@@ -123,7 +123,7 @@ module CarrierWave
         # [String] file's url
         #
         def url(expires = nil)
-          @uv_file.url(expires)
+          @uv_file.url(expires) if @uv_file.present?
         end
 
         def store(file)
@@ -150,12 +150,12 @@ module CarrierWave
         end
         
         def access_level=(acl)
-          @uv_file.access_level = acl
+          @uv_file.access_level = acl if @uv_file.present?
         end
 
         # The Amazon S3 Access policy ready to send in storage request headers.
         def method_missing(method_name, *args)
-          if @uv_file.respond_to?(method_name.to_sym)# and not method_name.to_s == 'filename'
+          if @uv_file.present? and @uv_file.respond_to?(method_name.to_sym)# and not method_name.to_s == 'filename'
             @uv_file.send(method_name.to_sym)
           else
             super
