@@ -46,7 +46,7 @@ module CarrierWave
           @object = @uploader.model
           
           @store = true
-          if uploader.respond_to?(:uv_store_versions?) and not uploader.uv_store_versions?
+          if uploader.respond_to?(:uv_store_versions?) and uploader.version_name.present? and not uploader.uv_store_versions?
             @store = false
           end
           
