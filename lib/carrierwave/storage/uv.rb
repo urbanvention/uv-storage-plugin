@@ -38,6 +38,7 @@ module CarrierWave
           @logger     = Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
           
           logger.debug 'Initalizing new Carrierwave Uv::File instance'
+          logger.debug "Uploader Versions Options: #{uploader.version_options}"
           
           @uploader = uploader
           @path = path
