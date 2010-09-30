@@ -55,8 +55,6 @@ module CarrierWave
           # try to find an existing file
           @object.save_without_validation if @object.new_record?
           
-          return unless @store
-          
           if @object.present?
             mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id, :order => 'id asc')
             logger.debug "Found mapping: #{mapping.present?}"
