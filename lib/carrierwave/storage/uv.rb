@@ -39,18 +39,20 @@ module CarrierWave
           @logger     = Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
           
           logger.debug 'Initalizing new Carrierwave Uv::File instance'
-          logger.debug "Uploader Versions Options: #{uploader.store_versions?}"
           
           @uploader = uploader
           @path = path
           @base = base
           @object = @uploader.model
           
-          if uploader.respond_to?(:store_versions?) and not uploader.store_versions?
+          @store = true
+          if uploader.respond_to?(:uv_store_versions?) and not uploader.uv_store_versions?
             @store = false
           else
             @store = true
           end
+          
+          logger.debug "Uploader Versions Options: #{@store}"
           
           # try to find an existing file
           @object.save_without_validation if @object.new_record?
