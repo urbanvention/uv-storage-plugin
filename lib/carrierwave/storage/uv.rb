@@ -48,8 +48,6 @@ module CarrierWave
           @store = true
           if uploader.respond_to?(:uv_store_versions?) and not uploader.uv_store_versions?
             @store = false
-          else
-            @store = true
           end
           
           logger.debug "Uploader Versions Options: #{@store}"
