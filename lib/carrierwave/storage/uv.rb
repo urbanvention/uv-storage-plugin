@@ -60,6 +60,8 @@ module CarrierWave
             logger.debug "Found mapping: #{mapping.present?}"
             logger.debug "Version name: #{uploader.version_name.present?}"
             
+            return unless mapping.present?
+            
             # if it is a thumbnail
             if uploader.version_name.present?
               logger.debug "Running initialize #{uploader.version_name}"
