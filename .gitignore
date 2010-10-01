@@ -3,3 +3,10 @@ rdoc/
 doc/*
 rdoc/*
 .yardoc
+.bundle
+.yardoc/*
+.bundle/*
+.rvmrc
+.DS_Store
+log/*
+graph

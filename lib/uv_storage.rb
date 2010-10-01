@@ -1,3 +1,4 @@
+require 'logger'
 require 'uv_storage/config'
 require 'uv_storage/file'
 require 'uv_storage/connection'
@@ -50,7 +51,7 @@ module Uv #:nodoc:
     end
     
     def self.logger
-      @@logger        ||= Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
+      @@logger        ||= Logger.new("#{::File.dirname(__FILE__) + '/..'}/log/uv_storage.log")
       @@logger.level  = Logger::DEBUG
       return @@logger
     end

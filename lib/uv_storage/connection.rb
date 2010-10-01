@@ -1,6 +1,7 @@
 require 'digest/sha1'
 require 'digest/md5'
 require 'uv_cipher'
+require 'httpclient'
 
 module Uv
   module Storage
