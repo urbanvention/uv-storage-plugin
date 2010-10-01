@@ -225,7 +225,7 @@ module CarrierWave
           uploader.instance_variable_set(:@file, f)
           return f
         else
-          raise 'file not found'
+          logger.debug "File not found"
           return nil
         end
       end
