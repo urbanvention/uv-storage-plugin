@@ -133,7 +133,7 @@ module Uv
       # @param  [ActiveRecord::Base]   object  the object to copy the file to
       # @return [Boolean]
       #
-      def copy(to_object)
+      def copy(to_object, identifier = '')
         validate_object(to_object)
         
         begin
@@ -141,14 +141,16 @@ module Uv
           logger.debug "Trying to download the file, and write it to a tempfile"
           
           tmp_file_name   = ::File.join(RAILS_ROOT, 'tmp', self.filename)
-          tmp_file        = ::File.new(tmp_file_name, 'w') 
+          tmp_file        = ::File.new(tmp_file_name, 'w+') 
           tmp_file.write(self.read)
           
           logger.debug "Tempfile written to: #{tmp_file_name}"         
           logger.debug "Creating a new file to copy to."
 
-          new_file = Uv::Storage::File.new(tmp_file, :object => to_object)
+          new_file = Uv::Storage::File.new(tmp_file, :object => to_object, :identifier => identifier)
           new_file.save
+
+          File.unlink(tmp_file_name) rescue nil
 
           return true
         rescue => e
