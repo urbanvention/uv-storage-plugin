@@ -165,7 +165,7 @@ module CarrierWave
         end
         
         def copy(to_object)
-          @uv_file.copy(to_object)
+          @uv_file.copy(to_object, @uv_file.identifier)
         end
 
         def content_type=(type)
