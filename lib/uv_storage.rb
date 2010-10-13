@@ -35,6 +35,8 @@ module Uv #:nodoc:
     mattr_accessor :logger
     mattr_accessor :orm
 
+    UV_STORAGE_LOGGER = Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
+
     #
     # Configuration method, which allows you to set different configuration option through a block in a file in your
     # initializers folder. An example would like this:
@@ -51,9 +53,8 @@ module Uv #:nodoc:
     end
 
     def self.logger
-      @@logger        ||= Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
-      @@logger.level  = Logger::DEBUG
-      return @@logger
+      UV_STORAGE_LOGGER.level  = Logger::DEBUG
+      return UV_STORAGE_LOGGER
     end
 
   end
