@@ -136,7 +136,7 @@ module CarrierWave
 
           f = ::File.open("#{RAILS_ROOT}/tmp/#{file.original_filename}", "w+")
           f.write file.read
-          file.close
+          file.close rescue nil
           ::File.unlink(file.path) rescue nil # remove tmp file
 
           logger.debug "Saved File #{f.class} / #{::File.basename(f.path)}"
