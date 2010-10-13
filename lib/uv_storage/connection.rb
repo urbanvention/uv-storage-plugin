@@ -2,14 +2,10 @@ require 'digest/sha1'
 require 'digest/md5'
 require 'uv_cipher'
 require 'httpclient'
+require 'cgi'
 
 module Uv
   module Storage
-    
-    class NodeConnectionFailed < StandardError; end;
-    class MasterConnectionFailed < StandardError; end;
-    class MissingSignature < StandardError; end;
-    class KeyVerificationFailed < StandardError; end;
     
     #
     # 
@@ -100,7 +96,7 @@ module Uv
             
             @request_result = self.client.get_content( @url, data )
           elsif method == 'post'
-            signature = compute_signature(params, false)
+            signature = compute_signature(params)
             data = {
               :signature => signature,
               :access_key => self.config.access_key
@@ -183,7 +179,7 @@ module Uv
         
         logger.debug "Trying to send file to master http://#{Uv::Storage.master_domain}/create"
         
-        signature = self.compute_signature(params, false)
+        signature = self.compute_signature(params)
         
         ::File.open(file.path) do |file|
           data = { 
@@ -211,6 +207,10 @@ module Uv
           logger.fatal e
           
           raise KeyVerificationFailed.new
+        end
+        
+        if @result['path'].blank? or @result['node_domains'].blank? or @result['status'].to_i == 1
+          raise NodeConnectionFailed.new
         end
         
         logger.debug "Got /create result from master: #{@result.inspect}"
@@ -291,7 +291,7 @@ module Uv
         logger.debug "Trying to retrieve the meta for file #{path} from a node #{node}, URL: #{self.base_url(node)}/meta/#{signature}"
         
         begin
-          @meta ||= self.client.get_content( "#{self.base_url(node)}/meta/#{signature}" )
+          @meta = self.client.get( "#{self.base_url(node)}/meta/#{signature}" )
         rescue => e
           logger.fatal "An error occured in Uv::Storage::Connection#meta"
           logger.fatal e
@@ -302,7 +302,7 @@ module Uv
         begin
           logger.debug "Result was: #{@meta}"
           
-          @meta = self.cipher.decrypt(@meta)
+          @meta = self.cipher.decrypt(@meta.content)
         rescue => e
           logger.fatal "An error occured in Uv::Storage::Connection#meta"
           logger.fatal e
@@ -345,7 +345,7 @@ module Uv
         }
         params.update(update_options)
         
-        signature = self.compute_signature(params, false)
+        signature = self.compute_signature(params)
         
         nodes.each do |node|
           begin
@@ -392,7 +392,7 @@ module Uv
           'path' => path
         }
         
-        signature = self.compute_signature(params, false)
+        signature = self.compute_signature(params)
         
         nodes.each do |node|
           begin
@@ -468,12 +468,8 @@ module Uv
       
       protected
       
-        def compute_signature(params, cgi_escape = true)
-          if cgi_escape
-            return CGI.escape(cipher.encrypt(params))
-          else
-            return cipher.encrypt(params)
-          end
+        def compute_signature(params)
+          cipher.encrypt(params)
         end
       
     end

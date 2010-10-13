@@ -1,9 +1,16 @@
+FIXTURES_PATH = File.dirname(__FILE__) + "/fixtures"
+
 require File.dirname(__FILE__) + "/spec_helpers"
+
 include SpecHelperFunctions
 setup_database_connection
 
-require File.dirname(__FILE__) + "/../lib/uv_storage"
+require 'rubygems'
+require 'factory_girl'
+require 'mime/types'
+
 require File.dirname(__FILE__) + "/fixtures/classes"
+require 'factories'
 
 RAILS_ROOT = File.dirname(__FILE__) + "/rails_app"
 
@@ -16,3 +23,5 @@ Spec::Runner.configure do |config|
     
   end
 end
+
+require File.dirname(__FILE__) + "/../lib/uv_storage"

@@ -10,3 +10,5 @@ rdoc/*
 .DS_Store
 log/*
 graph
+.infinity_test
+.infinity_test/*

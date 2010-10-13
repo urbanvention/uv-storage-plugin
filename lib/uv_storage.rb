@@ -3,6 +3,7 @@ require 'uv_storage/config'
 require 'uv_storage/file'
 require 'uv_storage/connection'
 require 'uv_storage/encoding_com/base'
+require 'app/models/uv_storage/file_mapping'
 
 module Uv #:nodoc:
   module Storage #:nodoc:
@@ -55,6 +56,19 @@ module Uv #:nodoc:
       @@logger.level  = Logger::DEBUG
       return @@logger
     end
+    
+    class ApiError < StandardError; end;
+    
+    class MetaInformationMissing < ApiError; end;
+    class MissingFileMapping < ApiError; end;
+    class FileObjectMissing < ApiError; end; 
+    class NodesMissing < ApiError; end;
+    class ActiveRecordObjectMissing < ApiError; end;
+    class ActiveRecordObjectInvalid < ApiError; end;
+    class NodeConnectionFailed < ApiError; end;
+    class MasterConnectionFailed < ApiError; end;
+    class MissingSignature < ApiError; end;
+    class KeyVerificationFailed < ApiError; end;
     
   end
 end

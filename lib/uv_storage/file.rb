@@ -1,12 +1,6 @@
 module Uv
   module Storage
     
-    class MissingFileMapping < StandardError; end;
-    class FileObjectMissing < StandardError; end; 
-    class NodesMissing < StandardError; end;
-    class ActiveRecordObjectMissing < StandardError; end;
-    class ActiveRecordObjectInvalid < StandardError; end;
-    
     class File
       
       # RAW File object for saving
@@ -147,7 +141,7 @@ module Uv
           logger.debug "Tempfile written to: #{tmp_file_name}"         
           logger.debug "Creating a new file to copy to."
 
-          new_file = Uv::Storage::File.new(tmp_file, :object => to_object)
+          new_file        = Uv::Storage::File.new(tmp_file, :object => to_object)
           new_file.save
 
           return true
@@ -155,7 +149,7 @@ module Uv
           logger.fatal "An error occured in Uv::Storage::File#copy"
           logger.fatal "Error was: #{e}"
           
-          return false
+          raise e
         end
       end
       
@@ -237,12 +231,14 @@ module Uv
             self.mapping.file_path = self.connection.update(mapping.nodes, mapping.file_path, { 'access_level' => lvl } )
             self.mapping.access_level = lvl 
             self.mapping.save
+          else
+            raise MissingFileMapping.new
           end
         rescue => e
           logger.fatal "Failed to update remote file and save mapping."
           logger.fatal "Error was: #{e}"
           
-          return false
+          raise e
         end
         
         # update the options (if the file will be saved afterwards)
@@ -369,6 +365,8 @@ module Uv
         raise NodesMissing.new if mapping.nodes.blank?
         
         retrieve_meta!
+        
+        raise MetaInformationMissing.new if self.meta.blank?
         
         return self.meta['file_size'].to_i
       end
