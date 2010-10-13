@@ -66,7 +66,15 @@ module CarrierWave
             if uploader.version_name.present?
               logger.debug "Running initialize #{uploader.version_name}"
 
-              ident = [uploader.version_name, mapping.identifier].compact.join('_')
+              if uploader.respond_to?(:extension?)
+                # translate the extension
+                map_identifier = "#{mapping.identifier.gsub(File.extname(mapping.identifier), '')}.#{uploader.extension?(uploader.version_name)}"
+
+                ident = [uploader.version_name, map_identifier].compact.join('_')
+              else
+                ident = [uploader.version_name, mapping.identifier].compact.join('_')
+              end
+
               @uv_file = ::Uv::Storage::File.new(:object => @object, :identifier => ident)
             else
               logger.debug "Trying to find parent: #{@object.present?} / #{mapping.present?}"
