@@ -1,2 +1,11 @@
-access_key: [INSERT YOUR ACCESS KEY]
-secret_key: [INSERT YOUR SECRET KEY]
+development:
+  access_key: [INSERT YOUR ACCESS KEY]
+  secret_key: [INSERT YOUR SECRET KEY]
+
+test:
+  access_key: [INSERT YOUR ACCESS KEY]
+  secret_key: [INSERT YOUR SECRET KEY]
+
+production:
+  access_key: [INSERT YOUR ACCESS KEY]
+  secret_key: [INSERT YOUR SECRET KEY]

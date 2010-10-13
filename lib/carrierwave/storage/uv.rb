@@ -4,7 +4,7 @@ module CarrierWave
     ##
     # Uploads things to urbanvention storage.
     # You'll need to specify in the configuration file of urbanvention storage. See Uv::Storage for reference.
-    # 
+    #
     # You can set the access policy for the uploaded files:
     #
     #     CarrierWave.configure do |config|
@@ -29,44 +29,52 @@ module CarrierWave
     class Uv < CarrierWave::Storage::Abstract
 
       class File
-        
+
         attr_accessor :object
         attr_accessor :uv_file
         attr_reader :logger
         attr_accessor :store
-        
+
         def initialize(uploader, base, path)
           @logger     = Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
-          
+
           logger.debug 'Initalizing new Carrierwave Uv::File instance'
-          
+
           @uploader = uploader
           @path = path
           @base = base
           @object = @uploader.model
-          
+
           @store = true
           if uploader.respond_to?(:uv_store_versions?) and uploader.version_name.present? and not uploader.uv_store_versions?
             @store = false
           end
-          
+
           logger.debug "Uploader Versions Options: #{@store}"
-          
+
           # try to find an existing file
-          @object.save_without_validation if @object.new_record?
-          
+          # @object.save_without_validation if @object.new_record?
+
           if @object.present?
             mapping = ::Uv::Storage::FileMapping.find_by_object_name_and_object_identifier(@object.class.to_s.downcase.to_s, @object.id, :order => 'id asc')
             logger.debug "Found mapping: #{mapping.present?}"
             logger.debug "Version name: #{uploader.version_name.present?}"
-            
+
             return unless mapping.present?
-            
+
             # if it is a thumbnail
             if uploader.version_name.present?
               logger.debug "Running initialize #{uploader.version_name}"
-              
-              ident = [uploader.version_name, mapping.identifier].compact.join('_')
+
+              if uploader.respond_to?(:extension?)
+                # translate the extension
+                map_identifier = "#{mapping.identifier.gsub(::File.extname(mapping.identifier), '')}.#{uploader.extension?(uploader.version_name)}"
+
+                ident = [uploader.version_name, map_identifier].compact.join('_')
+              else
+                ident = [uploader.version_name, mapping.identifier].compact.join('_')
+              end
+
               @uv_file = ::Uv::Storage::File.new(:object => @object, :identifier => ident)
             else
               logger.debug "Trying to find parent: #{@object.present?} / #{mapping.present?}"
@@ -76,7 +84,7 @@ module CarrierWave
           else
             logger.debug 'New Record created, there was no object given.'
           end
-          
+
           logger.debug 'Initalizing finished.'
         end
 
@@ -90,11 +98,11 @@ module CarrierWave
         def path
           @uv_file.path if @uv_file.present?
         end
-        
+
         def identifier
           @uv_file.filename if @uv_file.present?
         end
-        
+
         def original_filename
           @uv_file.identifier if @uv_file.present?
         end
@@ -130,27 +138,29 @@ module CarrierWave
 
         def store(file)
           return unless @store
-          
+
           logger.debug "Storing File in Object: #{file.class}"
           logger.debug "Sanitized file #{file.original_filename} / #{file.file.class}"
-          
+
           f = ::File.open("#{RAILS_ROOT}/tmp/#{file.original_filename}", "w+")
           f.write file.read
-            
+          file.close rescue nil
+          ::File.unlink(file.path) rescue nil # remove tmp file
+
           logger.debug "Saved File #{f.class} / #{::File.basename(f.path)}"
 
           @uv_file = ::Uv::Storage::File.new(f, :object => @object, :identifier => file.original_filename)
-          
+
           begin
             @uv_file.save
           rescue Exception => e
             logger.fatal "Error saving file"
             logger.fatal e
           end
-          
-          ::File.unlink(f.path)
+
+          ::File.unlink(f.path) rescue nil
         end
-        
+
         def access_level=(acl)
           @uv_file.access_level = acl if @uv_file.present?
         end
@@ -164,21 +174,25 @@ module CarrierWave
           end
         end
 
+        def copy(to_object)
+          @uv_file.copy(to_object, @uv_file.identifier)
+        end
+
         def content_type=(type)
-          # 
+          #
         end
 
         # Headers returned from file retrieval
         def headers
-          # 
+          #
         end
 
         def setup!
           return
         end
       end
-      
-      
+
+
       def setup!
         return
       end
@@ -211,21 +225,21 @@ module CarrierWave
       #
       def retrieve!(identifier)
         logger.debug "Called retrieve with #{identifier}"
-        
+
         f = CarrierWave::Storage::Uv::File.new(uploader, self, identifier)
-        
+
         logger.debug "File created: #{f.uv_file.present?}"
-          
+
         if f.uv_file.present?
           logger.debug "Uv_File present: #{f.uv_file.present?}"
           uploader.instance_variable_set(:@file, f)
           return f
         else
-          raise 'file not found'
+          logger.debug "File not found"
           return nil
         end
       end
-      
+
       def logger
         @logger ||= Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
       end
