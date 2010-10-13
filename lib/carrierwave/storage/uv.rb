@@ -68,7 +68,7 @@ module CarrierWave
 
               if uploader.respond_to?(:extension?)
                 # translate the extension
-                map_identifier = "#{mapping.identifier.gsub(File.extname(mapping.identifier), '')}.#{uploader.extension?(uploader.version_name)}"
+                map_identifier = "#{mapping.identifier.gsub(::File.extname(mapping.identifier), '')}.#{uploader.extension?(uploader.version_name)}"
 
                 ident = [uploader.version_name, map_identifier].compact.join('_')
               else
