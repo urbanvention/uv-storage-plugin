@@ -46,7 +46,7 @@ module Uv
             )
 
             @results.each do |format, attrs|
-              mapping = "#{original_mapping.identifier.gsub(::File.extname(mapping.identifier), '')}.#{self.uploader.extension?(format)}"
+              mapping = "#{original_mapping.identifier.gsub(::File.extname(original_mapping.identifier), '')}.#{self.uploader.extension?(format)}"
 
               mapping                   = Uv::Storage::FileMapping.new
               mapping.nodes             = attrs['node_domains']
