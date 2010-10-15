@@ -54,7 +54,7 @@ module Uv
               mapping.file_path         = attrs['path']
               mapping.object_name       = self.object.class.to_s.downcase
               mapping.object_identifier = self.object.id
-              mapping.identifier        = [format, original_mapping.identifier].compact.join('_')
+              mapping.identifier        = [format, mapping].compact.join('_')
               mapping.save
             end
 
