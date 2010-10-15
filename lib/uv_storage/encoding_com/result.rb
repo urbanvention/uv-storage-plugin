@@ -46,7 +46,7 @@ module Uv
             )
 
             @results.each do |format, attrs|
-              mapping = "#{original_mapping.identifier.gsub(::File.extname(original_mapping.identifier), '')}.#{self.uploader.extension?(format)}"
+              mapping_string = "#{original_mapping.identifier.gsub(::File.extname(original_mapping.identifier), '')}.#{self.uploader.extension?(format)}"
 
               mapping                   = Uv::Storage::FileMapping.new
               mapping.nodes             = attrs['node_domains']
@@ -54,7 +54,7 @@ module Uv
               mapping.file_path         = attrs['path']
               mapping.object_name       = self.object.class.to_s.downcase
               mapping.object_identifier = self.object.id
-              mapping.identifier        = [format, mapping].compact.join('_')
+              mapping.identifier        = [format, mapping_string].compact.join('_')
               mapping.save
             end
 
