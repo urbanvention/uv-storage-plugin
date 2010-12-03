@@ -1,7 +1,9 @@
 module Uv
   module Storage
     module EncodingCom
-
+      
+      class EncodingFailed < StandardError; end;
+      
       class Result
 
         attr_accessor :object
@@ -19,7 +21,10 @@ module Uv
           self.uploader = uploader
 
           self.params.stringify_keys!
-
+          
+          abort("Object is either not saved or not given.") if self.object.blank? or self.object.new_record?
+          abort("Not signature in request found.") if self.params['signature'].blank?
+          
           process_result!
         end
 
@@ -28,13 +33,30 @@ module Uv
         end
 
         protected
+        
+          def abort(message = nil)
+            self.status = 'failed'
+            
+            logger.fatal "Encoding Failed for #{self.object.class}##{self.object.id}"
+            
+            if message
+              logger.fatal "Fail message: #{message}"
+              raise Uv::Storage::EncodingCom::EncodingFailed.new(message)
+            else
+              raise Uv::Storage::EncodingCom::EncodingFailed.new
+            end
+          end
 
           def process_result!
             signature = params['signature']
 
             @results = self.connection.cipher.decrypt(signature)
             @results.stringify_keys!
-
+            
+            if @results['status'].to_i == 0 or @results['errors'].present?
+              abort("Encoding result came back with error, #{@results['errors']}")
+            end
+            
             @results.delete('hash')
             @results.delete('time')
 
@@ -44,6 +66,8 @@ module Uv
               self.object.id,
               :order => 'id asc'
             )
+            
+            abort("Could not find original.") if original_mapping.blank?
 
             @results.each do |format, attrs|
               mapping_string = "#{original_mapping.identifier.gsub(::File.extname(original_mapping.identifier), '')}.#{self.uploader.extension?(format)}"
@@ -55,12 +79,13 @@ module Uv
               mapping.object_name       = self.object.class.to_s.downcase
               mapping.object_identifier = self.object.id
               mapping.identifier        = [format, mapping_string].compact.join('_')
-              mapping.save
+              
+              unless mapping.save
+                abort("Failed to save encoding result, here is the mapping: #{mapping}")
+              end
             end
 
             self.status = 'success'
-
-            # logger.debug "#{@results.inspect}"
           end
 
       end
