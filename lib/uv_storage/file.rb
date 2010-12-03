@@ -318,8 +318,8 @@ module Uv
         raise NodesMissing.new if mapping.nodes.blank?
 
         begin
+          Uv::Storage::FileMapping.delete(self.mapping.id)
           self.connection.delete(mapping.nodes, mapping.file_path)
-          self.mapping.delete
 
           return true
         rescue => e
