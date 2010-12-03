@@ -150,7 +150,7 @@ module Uv
           new_file = Uv::Storage::File.new(tmp_file, :object => to_object, :identifier => identifier)
           new_file.save
 
-          File.unlink(tmp_file_name) rescue nil
+          ::File.unlink(tmp_file_name) rescue nil
 
           return true
         rescue => e
