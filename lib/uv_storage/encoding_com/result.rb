@@ -53,7 +53,7 @@ module Uv
             @results = self.connection.cipher.decrypt(signature)
             @results.stringify_keys!
             
-            if @results['status'].to_i == 0 or @results['errors'].present?
+            if @results['status'].to_i == 0 and not @results['errors'].strip.blank?
               abort("Encoding result came back with error, #{@results['errors']}")
             end
             
