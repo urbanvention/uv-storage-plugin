@@ -71,14 +71,14 @@ module Uv
         @connection = Uv::Storage::Connection.new(self.config)
         @object     = @options['object']
 
-        logger.debug "Initializing new Uv::Storage::File"
-        logger.debug "Args First is a:      #{args.first.class.to_s}"
-        logger.debug "Config loaded:        #{config.present?}"
-        logger.debug "Connection loaded:    #{connection.present?}"
-        logger.debug "Object given:         #{object.present?}"
-        logger.debug "Raw File given:       #{@raw_file.present?}"
-        logger.debug "Options given:        #{options.present?}"
-        logger.debug "Identifier given:     #{options['identifier'].present?}"
+        debug "Initializing new Uv::Storage::File"
+        debug "Args First is a:      #{args.first.class.to_s}"
+        debug "Config loaded:        #{config.present?}"
+        debug "Connection loaded:    #{connection.present?}"
+        debug "Object given:         #{object.present?}"
+        debug "Raw File given:       #{@raw_file.present?}"
+        debug "Options given:        #{options.present?}"
+        debug "Identifier given:     #{options['identifier'].present?}"
 
         validate_object(@object) if @object.present?
       end
@@ -137,15 +137,15 @@ module Uv
         validate_object(to_object)
 
         begin
-          logger.debug "Initialized Uv::Storage::File#copy"
-          logger.debug "Trying to download the file, and write it to a tempfile"
+          debug "Initialized Uv::Storage::File#copy"
+          debug "Trying to download the file, and write it to a tempfile"
 
           tmp_file_name   = ::File.join(RAILS_ROOT, 'tmp', self.filename)
           tmp_file        = ::File.new(tmp_file_name, 'w+')
           tmp_file.write(self.read)
 
-          logger.debug "Tempfile written to: #{tmp_file_name}"
-          logger.debug "Creating a new file to copy to."
+          debug "Tempfile written to: #{tmp_file_name}"
+          debug "Creating a new file to copy to."
 
           new_file = Uv::Storage::File.new(tmp_file, :object => to_object, :identifier => identifier)
           new_file.save
@@ -154,8 +154,8 @@ module Uv
 
           return true
         rescue => e
-          logger.fatal "An error occured in Uv::Storage::File#copy"
-          logger.fatal "Error was: #{e}"
+          fatal "An error occured in Uv::Storage::File#copy"
+          fatal "Error was: #{e}"
 
           return false
         end
@@ -225,24 +225,24 @@ module Uv
       # @return [Boolean] Returns true or false wether the operation succeeded or failed.
       #
       def access_level=(lvl)
-        logger.debug "Setting new access_level in Uv::Storage::File#access_level=#{lvl}"
+        debug "Setting new access_level in Uv::Storage::File#access_level=#{lvl}"
 
         #@access_level = lvl
         lvl = uv_access_level(lvl)
 
-        logger.debug "New access_level is '#{lvl}'"
+        debug "New access_level is '#{lvl}'"
 
         begin
           if self.mapping.present?
-            logger.debug "File already exists on Uv::Storage, trying to update the record"
+            debug "File already exists on Uv::Storage, trying to update the record"
 
             self.mapping.file_path = self.connection.update(mapping.nodes, mapping.file_path, { 'access_level' => lvl } )
             self.mapping.access_level = lvl
             self.mapping.save
           end
         rescue => e
-          logger.fatal "Failed to update remote file and save mapping."
-          logger.fatal "Error was: #{e}"
+          fatal "Failed to update remote file and save mapping."
+          fatal "Error was: #{e}"
 
           return false
         end
@@ -291,14 +291,14 @@ module Uv
         raise MissingFileMapping.new("Identifier: #{options['identifier']}") if mapping.blank?
         raise NodesMissing.new if mapping.nodes.blank?
 
-        logger.debug "URLs are beeing generated."
+        debug "URLs are beeing generated."
 
         @urls = []
         self.nodes.each do |node|
           @urls << self.connection.url(node, self.access_level, self.path)
         end
 
-          logger.debug "URLS: #{@urls.inspect}"
+          debug "URLS: #{@urls.inspect}"
 
         return @urls.shuffle.first        # randomize url for load-balancing
       end
@@ -323,8 +323,8 @@ module Uv
 
           return true
         rescue => e
-          logger.fatal "There was an error deleting the file."
-          logger.fatal "#{e}"
+          fatal "There was an error deleting the file."
+          fatal "#{e}"
 
           return false
         end
@@ -424,7 +424,7 @@ module Uv
         return if self.mapping.present? # already saved that file
         validate_object(self.object)
 
-        logger.debug "Sending file to master in Uv::Storage::File#save"
+        debug "Sending file to master in Uv::Storage::File#save"
 
         raise FileObjectMissing.new if self.raw_file.blank?
 
@@ -439,8 +439,8 @@ module Uv
           :identifier => self.options['identifier']
         )
 
-        logger.debug "Trying to save mapping in Uv::Storage::File#save"
-        logger.debug self.mapping
+        debug "Trying to save mapping in Uv::Storage::File#save"
+        debug self.mapping
 
         raise ActiveRecordObjectInvalid.new() unless self.mapping.valid?
 
@@ -559,21 +559,21 @@ module Uv
         end
 
         def mapping=(map)
-          logger.debug "Setting new mapping"
+          debug "Setting new mapping"
 
           self.options['file_mapping'] = map
         end
 
         def retrieve_meta!
-          logger.debug "Trying to retrieve meta information for file #{self.path}"
+          debug "Trying to retrieve meta information for file #{self.path}"
 
           begin
             if self.meta.blank?
               self.meta = self.connection.meta(self.nodes.first, self.path)
             end
           rescue => e
-            logger.fatal "Error getting meta data"
-            logger.fatal e
+            fatal "Error getting meta data"
+            fatal e
 
             self.meta = nil
           end

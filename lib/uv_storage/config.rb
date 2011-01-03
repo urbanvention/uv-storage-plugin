@@ -36,7 +36,7 @@ module Uv
         end
 
 
-        logger.debug "Uv::Storage::Config loaded: #{self.config_path}"
+        debug "Uv::Storage::Config loaded: #{self.config_path}"
       end
 
       #

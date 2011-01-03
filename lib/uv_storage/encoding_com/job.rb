@@ -200,8 +200,8 @@ module Uv
           begin
             @result = self.connection.request('/apis/encoding-com/jobs/create', 'post', @query)
           rescue => e
-            logger.fatal 'An error occured in sending your encoding request'
-            logger.fatal e
+            fatal 'An error occured in sending your encoding request'
+            fatal e
             raise e
           end
           

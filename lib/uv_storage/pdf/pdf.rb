@@ -43,8 +43,8 @@ module Uv
           :identifier => self.options['identifier']
         )
 
-        logger.debug "Trying to save mapping in Uv::Storage::File#save"
-        logger.debug mapping.inspect
+        debug "Trying to save mapping in Uv::Storage::File#save"
+        debug mapping.inspect
 
         raise ActiveRecordObjectInvalid.new() unless mapping.valid?
         mapping.save

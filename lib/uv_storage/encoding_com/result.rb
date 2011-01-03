@@ -37,10 +37,10 @@ module Uv
           def abort(message = nil)
             self.status = 'failed'
             
-            logger.fatal "Encoding Failed for #{self.object.class}##{self.object.id}"
+            fatal "Encoding Failed for #{self.object.class}##{self.object.id}"
             
             if message
-              logger.fatal "Fail message: #{message}"
+              fatal "Fail message: #{message}"
               raise Uv::Storage::EncodingCom::EncodingFailed.new(message)
             else
               raise Uv::Storage::EncodingCom::EncodingFailed.new

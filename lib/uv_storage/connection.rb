@@ -73,8 +73,8 @@ module Uv
         begin
           @content ||= self.client.get_content( self.url(node, access_level, path) )
         rescue => e
-          logger.fatal "Error while retrieving file in Uv::Storage::Connection#get"
-          logger.fatal e
+          fatal "Error while retrieving file in Uv::Storage::Connection#get"
+          fatal e
 
           raise NodeConnectionFailed.new
         end
@@ -112,8 +112,8 @@ module Uv
 
           @request_result = self.cipher.decrypt(@request_result)
         rescue => e
-          logger.fatal "Error while retrieving file in Uv::Storage::Connection#request"
-          logger.fatal e
+          fatal "Error while retrieving file in Uv::Storage::Connection#request"
+          fatal e
 
           raise MasterConnectionFailed.new
         end
@@ -180,7 +180,7 @@ module Uv
           'original_filename' => file.respond_to?(:original_filename) ? file.original_filename : ::File.basename(file.path)
         }
 
-        logger.debug "Trying to send file to master http://#{Uv::Storage.master_domain}/create"
+        debug "Trying to send file to master http://#{Uv::Storage.master_domain}/create"
 
         signature = self.compute_signature(params, false)
 
@@ -194,25 +194,25 @@ module Uv
           begin
             @result = self.client.post("http://#{Uv::Storage.master_domain}/create", data)
           rescue => e
-            logger.fatal "An error occured in Uv::Storage::Connection#create"
-            logger.fatal e
+            fatal "An error occured in Uv::Storage::Connection#create"
+            fatal e
 
             raise NodeConnectionFailed.new
           end
         end
 
-        logger.debug "Received signed signature: #{@result.content}."
+        debug "Received signed signature: #{@result.content}."
 
         begin
           @result = self.cipher.decrypt(@result.content)
         rescue => e
-          logger.fatal "An error occured in Uv::Storage::Connection#create"
-          logger.fatal e
+          fatal "An error occured in Uv::Storage::Connection#create"
+          fatal e
 
           raise KeyVerificationFailed.new
         end
 
-        logger.debug "Got /create result from master: #{@result.inspect}"
+        debug "Got /create result from master: #{@result.inspect}"
 
         return @result
       end
@@ -241,7 +241,7 @@ module Uv
           'action' => 'status'
         }
 
-        logger.debug "Trying to retrieve the status from a node"
+        debug "Trying to retrieve the status from a node"
 
         signature = self.compute_signature(params)
 
@@ -250,8 +250,8 @@ module Uv
         begin
           @status = self.cipher.decrypt(@status.content)
         rescue => e
-          logger.fatal "An error occured in Uv::Storage::Connection#status"
-          logger.fatal e
+          fatal "An error occured in Uv::Storage::Connection#status"
+          fatal e
 
           raise KeyVerificationFailed.new
         end
@@ -287,24 +287,24 @@ module Uv
 
         signature = self.compute_signature(params)
 
-        logger.debug "Trying to retrieve the meta for file #{path} from a node #{node}, URL: #{self.base_url(node)}/meta/#{signature}"
+        debug "Trying to retrieve the meta for file #{path} from a node #{node}, URL: #{self.base_url(node)}/meta/#{signature}"
 
         begin
           @meta ||= self.client.get_content( "#{self.base_url(node)}/meta/#{signature}" )
         rescue => e
-          logger.fatal "An error occured in Uv::Storage::Connection#meta"
-          logger.fatal e
+          fatal "An error occured in Uv::Storage::Connection#meta"
+          fatal e
 
           raise NodeConnectionFailed.new
         end
 
         begin
-          logger.debug "Result was: #{@meta}"
+          debug "Result was: #{@meta}"
 
           @meta = self.cipher.decrypt(@meta)
         rescue => e
-          logger.fatal "An error occured in Uv::Storage::Connection#meta"
-          logger.fatal e
+          fatal "An error occured in Uv::Storage::Connection#meta"
+          fatal e
 
           raise KeyVerificationFailed.new
         end
@@ -350,8 +350,8 @@ module Uv
           begin
             @update = self.client.post("#{self.base_url(node)}/update", { :signature => signature })
           rescue => e
-            logger.fatal "An error occured in Uv::Storage::Connection#update"
-            logger.fatal e
+            fatal "An error occured in Uv::Storage::Connection#update"
+            fatal e
 
             raise NodeConnectionFailed.new
           end
@@ -361,8 +361,8 @@ module Uv
         begin
           @update = self.cipher.decrypt(@update.content)
         rescue => e
-          logger.fatal "An error occured in Uv::Storage::Connection#update"
-          logger.fatal e
+          fatal "An error occured in Uv::Storage::Connection#update"
+          fatal e
 
           raise KeyVerificationFailed.new
         end
@@ -397,8 +397,8 @@ module Uv
           begin
             self.client.post("#{self.base_url(node)}/delete", { :signature => signature })
           rescue => e
-            logger.fatal "An error occured in Uv::Storage::Connection#delete"
-            logger.fatal e
+            fatal "An error occured in Uv::Storage::Connection#delete"
+            fatal e
 
             raise NodeConnectionFailed.new
           end
@@ -450,11 +450,11 @@ module Uv
       # @return [String] The full url to the file
       #
       def file_url(node, access_level, path, signature = "")
-        logger.debug "Generating file url."
-        logger.debug "Node:         #{node.to_s}"
-        logger.debug "Access Level: #{access_level}"
-        logger.debug "Path:         #{path}"
-        logger.debug "Signature:    #{signature}"
+        debug "Generating file url."
+        debug "Node:         #{node.to_s}"
+        debug "Access Level: #{access_level}"
+        debug "Path:         #{path}"
+        debug "Signature:    #{signature}"
 
         if access_level == 'public'
           "#{self.base_url(node)}/#{path}"
