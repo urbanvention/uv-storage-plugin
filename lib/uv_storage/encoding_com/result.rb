@@ -5,11 +5,11 @@ module Uv
       class EncodingFailed < StandardError; end;
       
       class Result
+        include Uv::Storage
 
         attr_accessor :object
         attr_accessor :params
         attr_accessor :connection
-        attr_accessor :logger
         attr_accessor :status
         attr_accessor :uploader
 
@@ -17,7 +17,6 @@ module Uv
           self.params = params
           self.object = object
           self.connection = Uv::Storage::Connection.new
-          self.logger = Uv::Storage.logger
           self.uploader = uploader
 
           self.params.stringify_keys!

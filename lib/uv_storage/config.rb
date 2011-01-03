@@ -34,9 +34,6 @@ module Uv
         elsif Rails.env.present?
           self.config[Rails.env]
         end
-
-
-        debug "Uv::Storage::Config loaded: #{self.config_path}"
       end
 
       #

@@ -6,11 +6,11 @@ module Uv
   module Storage
 
     class Pdf
-
+      include Uv::Storage
+      
       attr_accessor :object
       attr_accessor :url
       attr_accessor :connection
-      attr_accessor :logger
       attr_accessor :options
 
       def initialize(options = {})
@@ -19,7 +19,6 @@ module Uv
         self.url            = options.delete('url')
         self.object         = options.delete('object')
         self.connection     = Uv::Storage::Connection.new
-        self.logger         = Uv::Storage.logger
         self.options        = options
 
         raise ArgumentError.new if self.url.blank? or self.object.blank?

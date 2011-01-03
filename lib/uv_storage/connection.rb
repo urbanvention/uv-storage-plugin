@@ -36,15 +36,13 @@ module Uv
     # * 500 FAILED  - The request was unsuccessful (internal server error)
     #
     class Connection
-
+      include Uv::Storage
+      
       attr_accessor :config
       attr_accessor :client
       attr_reader   :cipher
-      attr_reader   :logger
 
       def initialize(config = nil)
-        @logger     = Uv::Storage.logger
-
         @config     = config.nil? ? Uv::Storage::Config.new : config
         @cipher     = Uv::Cipher.new(self.config.secret_key, self.config.access_key)
         @client     = HTTPClient.new

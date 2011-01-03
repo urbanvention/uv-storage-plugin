@@ -6,6 +6,7 @@ module Uv
       class MissingOutputFormat < StandardError; end;
       
       class Job
+        include Uv::Storage
         
         # Queue of different encoding output formats for this job
         attr_reader :output_formats
@@ -13,7 +14,6 @@ module Uv
         attr_accessor :source_url
         attr_accessor :callback_url
         attr_accessor :connection
-        attr_accessor :logger
         
         ##
         # Create a new job instance for processing in the encoding.com queue. Make sure that your encoding.com
@@ -51,7 +51,6 @@ module Uv
           self.source_url     = source_url
           self.callback_url   = callback_url
           self.connection     = Uv::Storage::Connection.new
-          self.logger         = Uv::Storage.logger
           @output_formats     = {}
         end
         

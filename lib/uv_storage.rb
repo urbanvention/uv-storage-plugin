@@ -52,15 +52,15 @@ module Uv #:nodoc:
       yield self
     end
 
-    def self.debug(msg)
+    def debug(msg)
       logger.debug(msg) if UV_DEBUG
     end
     
-    def self.fatal(msg)
+    def fatal(msg)
       logger.fatal(msg)
     end
 
-    def self.logger
+    def logger
       @@logger        ||= Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
       @@logger.level  = self.log_level
       return @@logger
