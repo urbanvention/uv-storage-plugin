@@ -64,7 +64,7 @@ module Uv
         @options.stringify_keys!
 
         @raw_file   = args.first
-        @config     = Uv::Storage::Config.new
+        @config     = configuration
         @connection = Uv::Storage::Connection.new(self.config)
         @object     = @options['object']
 

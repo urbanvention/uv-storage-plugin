@@ -34,6 +34,7 @@ module Uv #:nodoc:
 
     mattr_accessor :logger
     mattr_accessor :orm
+    mattr_accessor :config
     
     UV_DEBUG = false
 
@@ -50,6 +51,10 @@ module Uv #:nodoc:
     #
     def self.config
       yield self
+    end
+    
+    def configuration
+      @@config ||= Uv::Storage::Config.new
     end
 
     def debug(msg)

@@ -43,7 +43,7 @@ module Uv
       attr_reader   :cipher
 
       def initialize(config = nil)
-        @config     = config.nil? ? Uv::Storage::Config.new : config
+        @config     = config.nil? ? configuration : config
         @cipher     = Uv::Cipher.new(self.config.secret_key, self.config.access_key)
         @client     = HTTPClient.new
       end
