@@ -30,7 +30,7 @@ module CarrierWave
 
       class File
         
-        include Uv::Storage
+        include ::Uv::Storage
         
         attr_accessor :object
         attr_accessor :uv_file
