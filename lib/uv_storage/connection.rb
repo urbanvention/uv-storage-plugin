@@ -41,11 +41,20 @@ module Uv
       attr_accessor :config
       attr_accessor :client
       attr_reader   :cipher
-
+      
+      cattr_accessor :client
+      
       def initialize(config = nil)
         @config     = config.nil? ? configuration : config
         @cipher     = Uv::Cipher.new(self.config.secret_key, self.config.access_key)
-        @client     = HTTPClient.new
+      end
+      
+      def client
+        Uv::Storage::Connection.client
+      end
+      
+      def self.client
+        @@client ||= HTTPClient.new
       end
 
       #
