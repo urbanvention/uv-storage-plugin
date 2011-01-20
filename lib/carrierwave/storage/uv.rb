@@ -27,7 +27,8 @@ module CarrierWave
     #     http://node_name.urbanstorage.com/path/signature
     #
     class Uv < CarrierWave::Storage::Abstract
-
+      include ::Uv::Storage
+      
       class File
         
         include ::Uv::Storage
@@ -37,8 +38,6 @@ module CarrierWave
         attr_accessor :store
 
         def initialize(uploader, base, path)
-          @logger     = Logger.new("#{RAILS_ROOT}/log/uv_storage.log")
-
           debug 'Initalizing new Carrierwave Uv::File instance'
 
           @uploader = uploader
