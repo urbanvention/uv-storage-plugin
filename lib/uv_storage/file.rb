@@ -295,7 +295,7 @@ module Uv
           @urls << self.connection.url(node, self.access_level, self.path)
         end
 
-          debug "URLS: #{@urls.inspect}"
+        debug "URLS: #{@urls.inspect}"
 
         return @urls.shuffle.first        # randomize url for load-balancing
       end
@@ -552,7 +552,7 @@ module Uv
             end
           end
 
-          return self.options['file_mapping']
+          self.options['file_mapping']
         end
 
         def mapping=(map)
@@ -565,9 +565,7 @@ module Uv
           debug "Trying to retrieve meta information for file #{self.path}"
 
           begin
-            if self.meta.blank?
-              self.meta = self.connection.meta(self.nodes.first, self.path)
-            end
+            self.meta = self.connection.meta(self.nodes.first, self.path) if self.meta.blank?
           rescue => e
             fatal "Error getting meta data"
             fatal e
@@ -575,7 +573,7 @@ module Uv
             self.meta = nil
           end
 
-          return self.meta
+          self.meta
         end
 
     end

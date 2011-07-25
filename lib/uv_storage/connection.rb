@@ -218,6 +218,14 @@ module Uv
 
           raise KeyVerificationFailed.new
         end
+        
+        begin
+          if self.config.keep_tmp_files
+            ::File.unlink(file.path)
+          end
+        rescue => e
+          debug "Could not remove tmp file, leaving it."
+        end
 
         debug "Got /create result from master: #{@result.inspect}"
 
