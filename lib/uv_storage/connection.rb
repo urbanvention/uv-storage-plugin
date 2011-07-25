@@ -220,9 +220,7 @@ module Uv
         end
         
         begin
-          if self.config.keep_tmp_files
-            ::File.unlink(file.path)
-          end
+          ::File.unlink(file.path) unless self.config.keep_tmp_files
         rescue => e
           debug "Could not remove tmp file, leaving it."
         end
